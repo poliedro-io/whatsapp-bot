@@ -37,12 +37,12 @@ function handleMessage(socket, payload) {
 
 
 class Task {
-  states = {
-    PREPARING: 0,
-    RUNNING: 1,
-    COMPLETED: 2
-  };
   constructor(method, params, socket) {
+    this.states = {
+      PREPARING: 0,
+      RUNNING: 1,
+      COMPLETED: 2
+    };
     this.method = method;
     this.params = params;
     this.socket = socket
@@ -51,18 +51,18 @@ class Task {
   }
   run() {
     require(`./tasks/${this.method}`).run(this.params, this)
-    .then(res => {
-      this.setStatus(this.states.COMPLETED)
-      this.log(res)
-    },
-    err=>console.log(err.message))
+      .then(res => {
+        this.setStatus(this.states.COMPLETED)
+        this.log(res)
+      },
+        err => console.log(err.message))
   }
 
-  setStatus(val){
+  setStatus(val) {
     this.status = val
   }
 
-  setProgress(val){
+  setProgress(val) {
     this.progress = val
   }
 

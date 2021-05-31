@@ -4,7 +4,7 @@
   >
     <div
       v-if="!loggedIn"
-      style="height:100%"
+      style="height: 100%"
       class="d-flex flex-column align-items-center"
     >
       <h5>Necesitas otorgar permiso desde whatsapp</h5>
@@ -16,7 +16,7 @@
         :text="token"
         :size="300"
       ></vue-qr>
-      <div v-else class="my-auto" >
+      <div v-else class="my-auto">
         <b-spinner></b-spinner>
       </div>
     </div>
@@ -126,7 +126,7 @@ export default {
     },
     clean() {
       this.$emit("clean");
-    },
+    }
   },
 };
 </script>

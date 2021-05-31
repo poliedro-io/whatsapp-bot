@@ -1,6 +1,8 @@
 <template>
   <div class="card content shadow">
-    <div class="card-header"><h4> Whatsapp Bot <b-icon-chat-dots></b-icon-chat-dots></h4></div>
+    <div class="card-header">
+      <h4>Whatsapp Bot <b-icon-chat-dots></b-icon-chat-dots></h4>
+    </div>
     <div class="card-content p-3">
       <div class="row">
         <div class="col-8">
@@ -89,9 +91,15 @@ export default {
     sendMessage() {
       let payload = {
         message: this.message,
-        recipients: this.recipientsArr,
+        recipients: this.recipientsArr.map((r) => this.formatNumber(r)),
       };
       this.$emit("sendMessage", payload);
+    },
+    formatNumber(str) {
+      var cleaned = str.replace(/[^\d]/g, "");
+      console.log(cleaned)
+      if (cleaned.length < 8) return "invalid";
+      return "+569" + cleaned.slice(-8);
     },
   },
 };
