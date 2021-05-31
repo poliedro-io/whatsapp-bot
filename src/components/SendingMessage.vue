@@ -4,16 +4,21 @@
   >
     <div
       v-if="!loggedIn"
-      class="d-flex flex-column align-items-center justify-content-around"
+      style="height:100%"
+      class="d-flex flex-column align-items-center"
     >
       <h5>Necesitas otorgar permiso desde whatsapp</h5>
 
       <vue-qr
+        v-if="token != null"
         class="p-5 mx-auto"
         style="width: 300px"
-        text="Hello world!"
+        :text="token"
         :size="300"
       ></vue-qr>
+      <div v-else class="my-auto" >
+        <b-spinner></b-spinner>
+      </div>
     </div>
     <transition name="fade">
       <div v-if="loggedIn">
@@ -43,7 +48,11 @@
       </div>
     </transition>
 
-    <b-button v-if="completed" size="sm" variant="outline-success" @click="clean"
+    <b-button
+      v-if="completed"
+      size="sm"
+      variant="outline-success"
+      @click="clean"
       >Cerrar
     </b-button>
     <b-button
@@ -67,10 +76,15 @@ export default {
   data() {
     return {
       logs: [],
+      token: null,
     };
   },
   watch: {
     task: function (val) {
+      if (val.message.includes("TOKEN")) {
+        this.token = val.message.split(" ")[1];
+        return;
+      }
       this.logs.push(val.message);
       var element = this.$el.querySelector(".logs-box");
       if (element) element.scrollTop = element.scrollHeight;
@@ -131,7 +145,7 @@ export default {
   margin-top: 0.8rem;
   border-radius: 0.3rem;
   padding: 0.4rem;
-  padding-bottom:1.5rem;
+  padding-bottom: 1.5rem;
   color: #313131;
   div {
     font-size: 14px;

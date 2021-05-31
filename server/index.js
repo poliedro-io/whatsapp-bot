@@ -72,7 +72,7 @@ class Task {
       progress: this.progress,
       message: msg
     }
-    console.log(msg)
+    console.log(payload)
     this.socket.send(JSON.stringify(payload))
   }
 }

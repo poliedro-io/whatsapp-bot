@@ -65,7 +65,7 @@ export default {
   },
   methods: {
     verify() {
-      this.authorized = this.pwd == "asd";
+      this.authorized = this.pwd == "robotin";
       this.pwd = "";
     },
     close() {
