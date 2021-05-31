@@ -72,16 +72,16 @@ export default {
       this.authorized = false;
     },
     sendMessage(payload) {
-      console.log(payload)
-      // this.ws = new WebSocket(this.host);
-      // this.ws.onmessage = (message) => this.handleMessage(message);
+      // console.log(payload)
+      this.ws = new WebSocket(this.host);
+      this.ws.onmessage = (message) => this.handleMessage(message);
 
-      // this.ws.onopen = () => {
-      //   this.ws.send(
-      //     JSON.stringify({ method: "whatsapp-sender", params: payload })
-      //   );
-      // };
-      // this.ws.onclose = () => (this.task = null);
+      this.ws.onopen = () => {
+        this.ws.send(
+          JSON.stringify({ method: "whatsapp-sender", params: payload })
+        );
+      };
+      this.ws.onclose = () => (this.task = null);
     },
     handleMessage(message) {
       this.task = { ...JSON.parse(message["data"]) };

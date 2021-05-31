@@ -26,6 +26,7 @@ async function run({ message, recipients }, task) {
     // return Promise.resolve('Completado!')
 
     const browser = await puppeteer.launch({
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
