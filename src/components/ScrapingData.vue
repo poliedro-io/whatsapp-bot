@@ -38,9 +38,7 @@
       <a :href="downloadLink" download class="btn btn-sm btn-success">
         Descargar archivo
       </a>
-      <!-- <b-button size="sm" variant="success" 
-        >Descargar archivo
-      </b-button> -->
+
     </div>
 
     <b-button
