@@ -1,7 +1,7 @@
 <template>
   <div class="card content shadow">
     <div class="card-header">
-      <h4>Whatsapp Bot <b-icon-chat-dots></b-icon-chat-dots></h4>
+      <h4><b-icon-chat-dots></b-icon-chat-dots> Whatsapp Bot </h4>
     </div>
     <div class="card-content p-3">
       <div class="row">
@@ -62,7 +62,7 @@ export default {
     showConfirmDialog() {
       this.$bvModal
         .msgBoxConfirm(
-          `¿Está seguro que desea enviar este mensaje a ${
+          `¿Estás seguro que quieres enviar este mensaje a ${
             this.recipientsArr.length > 1
               ? `los ${this.recipientsArr.length} destinatarios`
               : "este destinatario"

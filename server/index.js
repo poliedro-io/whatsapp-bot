@@ -6,12 +6,11 @@ const INDEX = '/index.html';
 
 console.log()
 
-const server = express()
-  .use(express.static('dist'))
-  //   .use((req, res) => res.sendFile(INDEX, { root: __dirname }))
+const server = express().get('/download', function (req, res) {
+  const file = `data/data.json`
+  res.download(file)
+}).use(express.static('dist'))
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
-
-
 
 const wss = new Server({ server });
 
@@ -32,9 +31,6 @@ function handleMessage(socket, payload) {
     task.run()
   }
 }
-
-
-
 
 class Task {
   constructor(method, params, socket) {
