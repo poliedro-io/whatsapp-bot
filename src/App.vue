@@ -4,21 +4,15 @@
       <div v-if="!moduleName">
         <div class="buttons">
           <div v-on:click="setModule('dataScraper')" class="card me-2">
-            <b-icon
-              icon="file-earmark-arrow-down"
-              class="icon"
-            ></b-icon>
+            <b-icon icon="file-earmark-arrow-down" class="icon"></b-icon>
             <h4 class="mt-3">Obtener datos</h4>
           </div>
           <div v-on:click="setModule('whatsappSender')" class="card ms-2">
-            <b-icon
-              icon="chat-dots"
-              class="icon"
-            ></b-icon>
+            <b-icon icon="chat-dots" class="icon"></b-icon>
             <h4 class="mt-3">Enviar mensaje</h4>
           </div>
         </div>
-      <div class="d-flex justify-content-center mt-5">
+        <div class="d-flex justify-content-center mt-5">
           <b-button
             variant="outline-dark"
             size="sm"
@@ -65,7 +59,7 @@
           rounded="sm"
         >
           <data-scraper-card v-on:getData="getData"></data-scraper-card>
-            <template #overlay>
+          <template #overlay>
             <scraping-data v-on:clean="clean" :task="task"></scraping-data>
           </template>
         </b-overlay>
@@ -99,7 +93,7 @@ export default {
     WhatsappCard,
     DataScraperCard,
     SendingMessage,
-    ScrapingData
+    ScrapingData,
   },
   data() {
     return {
@@ -144,7 +138,7 @@ export default {
       this.ws.onclose = () => (this.task = null);
     },
     getData(payload) {
-      console.log(payload)
+      console.log(payload);
 
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
@@ -169,7 +163,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
 .main-wrapper {
   height: 100vh;
   display: grid;
@@ -187,22 +181,23 @@ export default {
   max-width: 95vw;
   display: flex;
   justify-content: center;
+  .card {
+    padding: 2rem;
+    width: 300px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgb(100, 100, 100);
+    &:hover {
+      color: black;
+      box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.2);
+    }
+  }
 }
 
-.buttons .card {
-  padding: 2rem;
-  width: 300px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: rgb(100, 100, 100);
-}
-.buttons .card:hover {
-  color: black;
-  box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.2);
-}
-.icon{
-  width: 50px; height: 50px;
+.icon {
+  width: 50px;
+  height: 50px;
 }
 </style>

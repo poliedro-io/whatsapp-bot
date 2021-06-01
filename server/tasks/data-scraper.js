@@ -3,7 +3,6 @@ const xlsx = require('xlsx')
 const fs = require('fs');
 const chunk = require('lodash/chunk');
 const flatten = require('lodash/flatten');
-const { Agent } = require('http');
 
 const url = 'https://www.google.cl/maps/'
 
@@ -19,12 +18,14 @@ async function run({ keyWords, cities }, task) {
 
     console.log(searchTerms)
 
-    const browser = await puppeteer.launch({
-        headless: false
-    });
+    resetData()
+
+    const browser = await puppeteer.launch(
+        // { headless: false }
+    );
     const page = await browser.newPage();
 
-    const batches = chunk(searchTerms, 10)
+    const batches = chunk(searchTerms, 3)
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
@@ -68,8 +69,6 @@ async function runByTerm(browser, term, task) {
         let resultsSelector = `div[aria-label="Resultados de ${term}"]`
         await page.waitForSelector(resultsSelector);
 
-        resetData()
-
         let isNextable = true
         let disabledAttr
 
@@ -100,10 +99,9 @@ async function runByTerm(browser, term, task) {
         } while (isNextable)
 
         await page.close()
-        return items
 
     } catch (error) {
-        console.error(error)
+        console.log('Error')
     }
 }
 
@@ -132,7 +130,7 @@ async function scrapSinglePage(links, browser) {
 
 function updateData(items, term) {
     let [clave, ciudad] = term.split(', ')
-    let itemsWithTerm = items.map(item => ({...item, clave, ciudad }))
+    let itemsWithTerm = items.map(item => ({ ...item, clave, ciudad }))
     let fileData = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
     fileData = fileData.concat(itemsWithTerm)
     fs.writeFileSync('data/data.json', JSON.stringify(fileData), 'utf-8');
@@ -152,16 +150,16 @@ async function getPageLinks(page, selector) {
 
 }
 
-function writeXLSX(){
+function writeXLSX() {
     let data = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
-    try{
+    try {
         let ws = xlsx.utils.json_to_sheet([])
         ws = xlsx.utils.sheet_add_json(ws, data)
         const wb = xlsx.utils.book_new()
         xlsx.utils.book_append_sheet(wb, ws, 'scraping-data')
         let fileName = 'data/data.xlsx'
         xlsx.writeFile(wb, fileName)
-    }catch(err){
+    } catch (err) {
         console.error(err)
     }
 }

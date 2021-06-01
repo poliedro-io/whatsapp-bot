@@ -8,7 +8,7 @@
     </div>
     <div class="card-content p-3">
       <div class="row">
-        <div class="col-12">
+        <div class="col-12 mb-3">
           <label for="tags"
             >Criterios de búsqueda (separalos con una coma o punto y
             coma)</label
@@ -18,11 +18,11 @@
             v-model="keyWordsArray"
             separator=",;"
             placeholder=""
-            no-add-on-enter
-            tag-removed-label="Elemento eliminado"
+            tag-removed-label="elemento eliminado"
             add-button-text="Agregar"
+            remove-on-delete
+
           ></b-form-tags>
-          <p class="mt-2">Value: {{ keyWordsArray }}</p>
         </div>
         <div class="col-12">
           <label class="d-flex justify-content-between">
@@ -42,6 +42,7 @@
           <div v-if="!toAll">
             <b-form-group>
               <b-form-radio-group
+               class="d-flex"
                 id="radio-group"
                 v-model="selectByRegion"
                 v-on:change="setRegionsOrCities"
@@ -65,7 +66,6 @@
       </div>
     </div>
     <div class="card-footer d-flex justify-content-between">
-      <!-- <div>{{host}}</div> -->
       <div>{{ selectedLength }} ciudades</div>
       <button
         :disabled="!selectedLength || !keyWordsArray.length"
@@ -176,7 +176,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
 .content {
   width: 800px;
   max-width: 95vw;
@@ -191,4 +191,22 @@ label {
 .resume {
   font-size: 24px;
 }
+
+.badge{
+  background-color: gray;
+  button{
+    border: none;
+    background-color: gray;
+  }
+}
+
+div[role="radiogroup"]{
+  .custom-control{
+    margin-right: 1rem;
+    input[type="radio"]{
+      margin-right: 0.2rem;
+    }
+  }
+}
+
 </style>
