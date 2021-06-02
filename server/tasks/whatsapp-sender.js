@@ -6,27 +6,9 @@ async function run({ message, recipients }, task) {
         return ''
 
     task.log('Comenzando.')
-    // await new Promise(resolve => {
-    //     setTimeout(function () {
-    //         resolve()
-    //     }, 2000);
-    // })
-    // task.setStatus(task.states.RUNNING)
-    // task.log('Comenzando a enviar')
-
-    // for (let index = 0; index < recipients.length; index++) {
-    //     let res = await sendMessage(recipients[index], index + 1, recipients.length)
-
-    //     if (task.socket.readyState != 1)
-    //         throw Error('Abortado')
-    //     task.setProgress((index + 1) / recipients.length)
-    //     task.log(res)
-    // }
-
-    // return Promise.resolve('Completado!')
-
+ 
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -41,10 +23,11 @@ async function run({ message, recipients }, task) {
 
     qr_code = await page.$eval('._3jid7', el => el.getAttribute('data-ref'))
 
-    // await browser.close();
     task.log(`TOKEN ${qr_code}`)
 
-    await page.waitForSelector('#side')
+    await page.waitForSelector('#side', {
+        timeout: 120000
+    })
 
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando envío...')
@@ -74,7 +57,6 @@ async function run({ message, recipients }, task) {
         task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${recipients[index]}`)
         await page.waitForTimeout(1000)
     }
-
 
     await browser.close();
     return 'Completado!'

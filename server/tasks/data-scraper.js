@@ -18,19 +18,12 @@ async function run({ keyWords, cities }, task) {
     resetData()
 
     const browser = await puppeteer.launch();
-    // const batches = chunk(searchTerms, 2)
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
-    // for (let i = 0; i < batches.length; i++) {
-    //     await runBatch(browser, batches[i], task)
-    //     task.setProgress((i + 1) / batches.length)
-    // }
-    let i = 1
-    for (let term of searchTerms) {
+    for (let [i, term] of searchTerms.entries()) {
         await runByTerm(browser, term, task)
-        task.setProgress(i / searchTerms.length)
-        i++
+        task.setProgress((i + 1) / searchTerms.length)
     }
 
     task.log(`${count} datos obtenidos.`)
@@ -50,12 +43,6 @@ module.exports = {
 const sleep = (time) => {
     return new Promise(resolve => setTimeout(() => resolve(), time));
 }
-
-// async function runBatch(browser, batch, task) {
-//     return Promise.all(batch.map((term) =>
-//         runByTerm(browser, term, task)
-//     ))
-// }
 
 async function runByTerm(browser, term, task) {
     try {
