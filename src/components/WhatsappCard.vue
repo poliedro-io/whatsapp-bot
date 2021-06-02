@@ -1,7 +1,7 @@
 <template>
   <div class="card content shadow">
     <div class="card-header">
-      <h4><b-icon-chat-dots></b-icon-chat-dots> Whatsapp Bot </h4>
+      <h4><b-icon-chat-dots></b-icon-chat-dots> Whatsapp Bot</h4>
     </div>
     <div class="card-content p-3">
       <div class="row">
@@ -29,7 +29,6 @@
       </div>
     </div>
     <div class="card-footer d-flex justify-content-between">
-      <!-- <div>{{host}}</div> -->
       <div>{{ recipientsArr.length }} destinatarios</div>
       <button
         :disabled="!recipientsArr.length || message == ''"
@@ -51,10 +50,10 @@ export default {
     };
   },
   computed: {
-    recipientsArr: function () {
+    recipientsArr: function() {
       return this.recipientsStr.split("\n").filter((s) => s != "");
     },
-    host: function () {
+    host: function() {
       return location.origin;
     },
   },
@@ -91,15 +90,24 @@ export default {
     sendMessage() {
       let payload = {
         message: this.message,
-        recipients: this.recipientsArr.map((r) => this.formatNumber(r)),
+        recipients: this.formatNumbers(this.recipientsArr),
       };
       this.$emit("sendMessage", payload);
     },
-    formatNumber(str) {
-      var cleaned = str.replace(/[^\d]/g, "");
-      console.log(cleaned)
-      if (cleaned.length < 8) return "invalid";
-      return "+569" + cleaned.slice(-8);
+
+    formatNumbers(array) {
+      return array.map((el) => {
+        var number = el.replace(/[^\d]/g, "");
+        let length = number.length;
+        if (length < 8) number = null;
+        else if (length === 8) number = "+569" + number;
+        else if (length === 9) {
+          number = number[0] !== "9" ? null : "+56" + number;
+        } else {
+          number = number.includes("569") ? "+569" + number.slice(-8) : null;
+        }
+        return number;
+      });
     },
   },
 };

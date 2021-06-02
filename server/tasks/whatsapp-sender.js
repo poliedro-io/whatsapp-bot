@@ -18,6 +18,7 @@ async function run({ message, recipients }, task) {
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3641.0 Safari/537.36');
     await page.goto('https://web.whatsapp.com', {
         waitUntil: 'networkidle0',
+        timeout: 120000
     })
 
 
@@ -34,21 +35,28 @@ async function run({ message, recipients }, task) {
 
     await page.waitForTimeout(1000)
 
-    for (let index = 0; index < recipients.length; index++) {
+    for (let [index, number] of recipients.entries()) {
+        if(!number){
+            task.setProgress((index + 1) / recipients.length)
+            task.log(`[${index + 1}/${recipients.length}] Número inválido`)
+            continue
+        }
+
         if (task.socket.readyState != 1)
             throw Error('Abortado')
-        var url = `https://web.whatsapp.com/send?phone=${recipients[index]}&text=${encodeURI(message)}`
+        var url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
         await page.goto(url, {
             waitUntil: 'networkidle0',
+            timeout: 120000
         })
-        await page.waitForSelector('#side')
+        await page.waitForSelector('#side', {timeout: 120000})
         await page.waitForTimeout(1000)
 
         var invalidNumber = await page.$('._1dwBj._3xWLK')
 
         if (invalidNumber) {
             task.setProgress((index + 1) / recipients.length)
-            task.log(`[${index + 1}/${recipients.length}] Número inválido ${recipients[index]}`)
+            task.log(`[${index + 1}/${recipients.length}] Número sin whatsapp: ${number}`)
             continue
         }
 
