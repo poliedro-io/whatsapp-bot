@@ -3,6 +3,7 @@ const xlsx = require('xlsx')
 const fs = require('fs');
 const { flatten } = require('lodash');
 const url = 'https://www.google.cl/maps/'
+const countries = JSON.parse(fs.readFileSync('src/assets/countries.json', 'utf-8'));
 
 let count = 0
 
@@ -116,7 +117,13 @@ async function scrapSinglePage(links, browser) {
 
 function updateData(items, term) {
     let [clave, ciudad] = term.split(', ')
-    let itemsWithTerm = items.map(item => ({ ...item, clave, ciudad }))
+    let itemsWithTerm = items.map(item => ({ ...item, clave, ciudad })).filter(item => {
+        if (item.direccion) {
+            let country = item.direccion.split(', ').pop()
+            return !countries[country]
+        }
+        else return true
+    })
     let fileData = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
     fileData = fileData.concat(itemsWithTerm)
     fs.writeFileSync('data/data.json', JSON.stringify(fileData), 'utf-8');
