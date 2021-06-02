@@ -98,7 +98,7 @@ export default {
   data() {
     return {
       pwd: "",
-      authorized: true, //cambir a false a terminar
+      authorized: false,
       task: null,
       ws: null,
       moduleName: null,

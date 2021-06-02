@@ -5,6 +5,7 @@ const chunk = require('lodash/chunk');
 const flatten = require('lodash/flatten');
 
 const url = 'https://www.google.cl/maps/'
+const maxPageLifeTime = 1000 * 60 * 5
 
 let count = 0
 
@@ -20,12 +21,13 @@ async function run({ keyWords, cities }, task) {
 
     resetData()
 
-    const browser = await puppeteer.launch(
-        // { headless: false }
+    const browser = await puppeteer.launch({
+        headless: false
+    }
     );
     const page = await browser.newPage();
 
-    const batches = chunk(searchTerms, 3)
+    const batches = chunk(searchTerms, 2)
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
@@ -84,7 +86,7 @@ async function runByTerm(browser, term, task) {
             // actualizar archivo json
             updateData(pageItems, term)
             count += pageItems.length
-            task.log(`${count} registros obtenidos`)
+            task.log(`${pageItems.length} registros agregados`)
 
             console.log(count)
 
@@ -95,10 +97,11 @@ async function runByTerm(browser, term, task) {
                 console.log('No hay más resultados.')
                 break
             }
-            await sleep(2000)
+            await sleep(1000)
         } while (isNextable)
 
         await page.close()
+        await closeOldPages(browser)
 
     } catch (error) {
         console.log('Error')
@@ -148,6 +151,17 @@ async function getPageLinks(page, selector) {
     }
     return page.$$eval('.a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd', (cards) => cards.map(el => el.getAttribute('href')))
 
+}
+
+async function closeOldPages(browser){
+        for (const page of await browser.pages()) {
+            if (!await page.isClosed()) {
+                const pageTimestamp = await page.evaluate(`window.performance.now()`)
+                if (pageTimestamp > maxPageLifeTime) {
+                    await page.close()
+                }
+            }
+        }
 }
 
 function writeXLSX() {
