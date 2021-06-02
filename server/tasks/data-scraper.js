@@ -1,15 +1,13 @@
 const puppeteer = require('puppeteer')
 const xlsx = require('xlsx')
 const fs = require('fs');
-const chunk = require('lodash/chunk');
-const flatten = require('lodash/flatten');
-
+const { flatten } = require('lodash');
 const url = 'https://www.google.cl/maps/'
-const maxPageLifeTime = 1000 * 60 * 5
 
 let count = 0
 
 async function run({ keyWords, cities }, task) {
+
     if (!keyWords.length || !cities.length)
         return ''
 
@@ -17,27 +15,25 @@ async function run({ keyWords, cities }, task) {
         cities.map(c => `${kw}, ${c}`)
     ))
 
-    console.log(searchTerms)
-
     resetData()
 
-    const browser = await puppeteer.launch({
-        headless: false
-    }
-    );
-    const page = await browser.newPage();
-
-    const batches = chunk(searchTerms, 2)
+    const browser = await puppeteer.launch();
+    // const batches = chunk(searchTerms, 2)
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
-    for (let i = 0; i < batches.length; i++) {
-        await runBatch(browser, batches[i], task)
-        task.setProgress((i + 1) / batches.length)
+    // for (let i = 0; i < batches.length; i++) {
+    //     await runBatch(browser, batches[i], task)
+    //     task.setProgress((i + 1) / batches.length)
+    // }
+    let i = 1
+    for (let term of searchTerms) {
+        await runByTerm(browser, term, task)
+        task.setProgress(i / searchTerms.length)
+        i++
     }
-    task.log(`${count} datos obtenidos.`)
 
-    await page.waitForTimeout(1000)
+    task.log(`${count} datos obtenidos.`)
 
     await browser.close();
 
@@ -55,11 +51,11 @@ const sleep = (time) => {
     return new Promise(resolve => setTimeout(() => resolve(), time));
 }
 
-async function runBatch(browser, batch, task) {
-    return Promise.all(batch.map((term) =>
-        runByTerm(browser, term, task)
-    ))
-}
+// async function runBatch(browser, batch, task) {
+//     return Promise.all(batch.map((term) =>
+//         runByTerm(browser, term, task)
+//     ))
+// }
 
 async function runByTerm(browser, term, task) {
     try {
@@ -88,8 +84,6 @@ async function runByTerm(browser, term, task) {
             count += pageItems.length
             task.log(`${pageItems.length} registros agregados`)
 
-            console.log(count)
-
             // avanzar página
             try {
                 await page.click('button[aria-label="Página siguiente"]');
@@ -97,15 +91,17 @@ async function runByTerm(browser, term, task) {
                 console.log('No hay más resultados.')
                 break
             }
-            await sleep(1000)
+            await sleep(1500)
         } while (isNextable)
 
         await page.close()
-        await closeOldPages(browser)
 
     } catch (error) {
-        console.log('Error')
+        console.log('Error: algún elemento no se encontró')
     }
+
+    await closeAllPages(browser)
+
 }
 
 async function scrapSinglePage(links, browser) {
@@ -153,15 +149,11 @@ async function getPageLinks(page, selector) {
 
 }
 
-async function closeOldPages(browser){
-        for (const page of await browser.pages()) {
-            if (!await page.isClosed()) {
-                const pageTimestamp = await page.evaluate(`window.performance.now()`)
-                if (pageTimestamp > maxPageLifeTime) {
-                    await page.close()
-                }
-            }
-        }
+async function closeAllPages(browser) {
+    for (const page of await browser.pages()) {
+        if (!await page.isClosed())
+            await page.close()
+    }
 }
 
 function writeXLSX() {

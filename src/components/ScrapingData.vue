@@ -41,14 +41,14 @@
 
     </div>
 
-    <b-button
+    <!-- <b-button
       v-else
       variant="link"
       size="sm"
       class="text-decoration-none text-danger"
       @click="cancel"
       >Cancelar proceso
-    </b-button>
+    </b-button> -->
   </div>
 </template>
 
