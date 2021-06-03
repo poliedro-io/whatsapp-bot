@@ -25,7 +25,7 @@
           </span>
         </div>
         <div class="logs-box">
-          <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
+          <div>{{ log }}</div>
         </div>
       </div>
     </transition>
@@ -58,15 +58,13 @@ export default {
   props: ["task"],
   data() {
     return {
-      logs: [],
+      logs: '',
       token: null,
     };
   },
   watch: {
     task: function(val) {
-      this.logs.push(val.message);
-      var element = this.$el.querySelector(".logs-box");
-      if (element) element.scrollTop = element.scrollHeight;
+      this.logs = val.message;
     },
   },
   computed: {

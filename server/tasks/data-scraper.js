@@ -27,7 +27,7 @@ async function run({ keyWords, cities }, task) {
         task.setProgress((i + 1) / searchTerms.length)
     }
 
-    task.log(`${count} datos obtenidos.`)
+    task.log('Proceso completado.')
 
     await browser.close();
 
@@ -68,9 +68,9 @@ async function runByTerm(browser, term, task) {
             let pageItems = await scrapSinglePage(links, browser)
 
             // actualizar archivo json
-            updateData(pageItems, term)
-            count += pageItems.length
-            task.log(`${pageItems.length} registros agregados`)
+            let added = updateData(pageItems, term)
+            count += added
+            task.log(`${count} registros obtenidos`)
 
             // avanzar página
             try {
@@ -127,6 +127,8 @@ function updateData(items, term) {
     let fileData = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
     fileData = fileData.concat(itemsWithTerm)
     fs.writeFileSync('data/data.json', JSON.stringify(fileData), 'utf-8');
+
+    return itemsWithTerms.length
 }
 
 function resetData() {

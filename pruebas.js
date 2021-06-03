@@ -10,7 +10,21 @@ function cleanData() {
         }
         else return true
     })
-    console.log(fileData.length, items.length)
+    
+    fs.writeFileSync('data/data.json', JSON.stringify(items), 'utf-8');
 }
 
-cleanData()
+function writeXLSX(data) {
+    try {
+        let ws = xlsx.utils.json_to_sheet([])
+        ws = xlsx.utils.sheet_add_json(ws, data)
+        const wb = xlsx.utils.book_new()
+        xlsx.utils.book_append_sheet(wb, ws, 'scraping-data')
+        let fileName = 'data/data.xlsx'
+        xlsx.writeFile(wb, fileName)
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+writeXLSX(fileData)
