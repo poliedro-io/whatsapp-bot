@@ -1,14 +1,13 @@
 const puppeteer = require('puppeteer');
-
+const fs = require('fs');
 
 async function run({ message, recipients }, task) {
     if (!message || !recipients || !recipients.length)
         return ''
 
     task.log('Comenzando.')
- 
+
     const browser = await puppeteer.launch({
-        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -36,9 +35,15 @@ async function run({ message, recipients }, task) {
     await page.waitForTimeout(1000)
 
     for (let [index, number] of recipients.entries()) {
-        if(!number){
+        if (!number) {
             task.setProgress((index + 1) / recipients.length)
             task.log(`[${index + 1}/${recipients.length}] Número inválido`)
+            continue
+        }
+
+        if (hasSent(number)) {
+            task.setProgress((index + 1) / recipients.length)
+            task.log(`[${index + 1}/${recipients.length}] Número repetido: ${number}`)
             continue
         }
 
@@ -49,7 +54,7 @@ async function run({ message, recipients }, task) {
             waitUntil: 'networkidle0',
             timeout: 120000
         })
-        await page.waitForSelector('#side', {timeout: 120000})
+        await page.waitForSelector('#side', { timeout: 120000 })
         await page.waitForTimeout(1000)
 
         var invalidNumber = await page.$('._1dwBj._3xWLK')
@@ -62,7 +67,8 @@ async function run({ message, recipients }, task) {
 
         await page.$eval('button._1E0Oz', el => el.click())
         task.setProgress((index + 1) / recipients.length)
-        task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${recipients[index]}`)
+        task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
+        updateData(number)
         await page.waitForTimeout(1000)
     }
 
@@ -71,6 +77,18 @@ async function run({ message, recipients }, task) {
 
 }
 
+function updateData(phoneNumber) {
+    let fileData = JSON.parse(fs.readFileSync('data/whatsapp-sender.json', 'utf-8'));
+    fileData.push(phoneNumber);
+    fs.writeFileSync('data/whatsapp-sender.json', JSON.stringify(fileData), 'utf-8');
+}
+
+function hasSent(number){
+    let fileData = JSON.parse(fs.readFileSync('data/whatsapp-sender.json', 'utf-8'));
+    return fileData.includes(number)
+}
+
 module.exports = {
     run
 }
+

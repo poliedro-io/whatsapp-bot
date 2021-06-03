@@ -2,8 +2,8 @@ const fs = require('fs');
 const countries = JSON.parse(fs.readFileSync('src/assets/countries.json', 'utf-8'));
 const xlsx = require('xlsx')
 
-function cleanData() {
-    let data = readXLSX('data/veterinarias.xlsx')
+function cleanData(file) {
+    let data = readXLSX(`data/${file}.xlsx`)
     let cleanedData = data.filter(item => {
         if(item.direccion){
             let country = item.direccion.split(', ').pop()    
@@ -12,7 +12,6 @@ function cleanData() {
         else return true
     })
     return cleanedData
-    // fs.writeFileSync('data/data.json', JSON.stringify(items), 'utf-8');
 }
 
 function writeXLSX(data) {
@@ -50,5 +49,5 @@ function merge(){
     writeXLSX(data)
 }
 
-const data = cleanData()
+data = cleanData('veterinaria')
 writeXLSX(data)
