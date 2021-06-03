@@ -25,7 +25,7 @@
           </span>
         </div>
         <div class="logs-box">
-          <div>{{ log }}</div>
+          <div>{{ logs }}</div>
         </div>
       </div>
     </transition>

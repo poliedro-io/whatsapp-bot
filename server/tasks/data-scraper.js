@@ -128,7 +128,7 @@ function updateData(items, term) {
     fileData = fileData.concat(itemsWithTerm)
     fs.writeFileSync('data/data.json', JSON.stringify(fileData), 'utf-8');
 
-    return itemsWithTerms.length
+    return itemsWithTerm.length
 }
 
 function resetData() {
