@@ -33,7 +33,7 @@ function countSended() {
     ]
 }
 
-// console.log(countSended())
+console.log(countSended())
 
 
 // arrayToDict()
