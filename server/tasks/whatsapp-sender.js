@@ -65,12 +65,8 @@ async function run({ message, recipients }, task) {
                 timeout: 120000
             })
             // await page.waitForFunction(`!document.querySelector('progress')`, { timeout: 180000 })
-            try{
-                await page.waitForSelector('#side', { timeout: 180000 })
-            } catch(err){
-                console.log('Error: no cargó la página')
-                continue
-            }
+          
+            await page.waitForSelector('#side', { timeout: 240000 })
             await page.waitForTimeout(1000)
 
             // var invalidNumber = await page.$('._1dwBj._3xWLK')
