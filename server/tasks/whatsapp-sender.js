@@ -9,7 +9,7 @@ async function run({ message, recipients }, task) {
     task.log('Comenzando.')
 
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -27,11 +27,11 @@ async function run({ message, recipients }, task) {
     try {
         await page.goto('https://web.whatsapp.com', {
             waitUntil: 'networkidle0',
-            timeout: 120000
+            timeout: 120000,
         })
 
-
-        qr_code = await page.$eval('._3jid7', el => el.getAttribute('data-ref'))
+        // CODIGO QR
+        const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
 
         task.log(`TOKEN ${qr_code}`)
 
@@ -59,6 +59,7 @@ async function run({ message, recipients }, task) {
 
             if (task.socket.readyState != 1)
                 throw Error('Abortado')
+
             var url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
             await page.goto(url, {
                 waitUntil: 'networkidle0',
@@ -73,9 +74,7 @@ async function run({ message, recipients }, task) {
             }
             await page.waitForTimeout(1000)
 
-            // var invalidNumber = await page.$('._1dwBj._3xWLK')
-            var invalidNumber = await page.$('.overlay._1814Z')
-
+            const invalidNumber = await page.$('._3J6wB') // MODAL NUMERO INVALIDO
 
             if (invalidNumber) {
                 task.setProgress((index + 1) / recipients.length)
@@ -84,17 +83,22 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            await page.click('button._1E0Oz')
+
+            await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
             task.setProgress((index + 1) / recipients.length)
             task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
             updateData(number)
             await page.waitForTimeout(1000)
+
             await page.waitForFunction(
-                `document.querySelectorAll("._2nWgr > span")[document.querySelectorAll("._2nWgr > span").length-1].getAttribute('data-icon')!='msg-time'`
+                `document.querySelectorAll(".do8e0lj9>span")[document.querySelectorAll(".do8e0lj9>span").length-1].getAttribute('data-icon')!='msg-time'`
                 , { timeout: 120000 }
             );
+
+
             // Borra el contenido por si acaso
-            await page.click('._2A8P4')
+            await page.click('._13NKt')    // BARRA DE TEXTO
+            // eslint-disable-next-line no-unused-vars
             for (let _ of message) {
                 await page.keyboard.press('Backspace');
             }

@@ -2,9 +2,8 @@ const express = require('express')
 const { Server } = require('ws');
 
 const PORT = process.env.PORT || 3000;
-const INDEX = '/index.html';
+// const INDEX = '/index.html';
 
-console.log()
 
 const server = express().get('/download', function (req, res) {
   const file = `data/data.xlsx`

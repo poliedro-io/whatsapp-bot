@@ -2,6 +2,8 @@ const fs = require('fs');
 const countries = JSON.parse(fs.readFileSync('src/assets/countries.json', 'utf-8'));
 const xlsx = require('xlsx')
 
+const logs = JSON.parse(fs.readFileSync('data/logs.json', 'utf-8'));
+
 function cleanData(file) {
     let data = readXLSX(`data/${file}.xlsx`)
     let cleanedData = data.filter(item => {
@@ -49,5 +51,17 @@ function merge(){
     writeXLSX(data)
 }
 
-data = cleanData('veterinaria')
-writeXLSX(data)
+// data = cleanData('veterinaria')
+// writeXLSX(data)
+
+
+function viewTotal(){
+    // console.log(logs)
+    let sended = Object.entries(logs).filter(([number, value]) => 
+    value.timestamp > 1623420000000 && !!!value.error
+    )
+    // logs.filter(l => l.timestamp > 1623420000000)
+    console.log(sended.length)
+}
+
+viewTotal()
