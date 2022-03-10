@@ -8,16 +8,15 @@
       style="height: 100%"
       class="d-flex flex-column align-items-center"
     >
-      <h5>Dar permiso</h5>
-      <vue-qr
+      <h5>Permiso de Whatsapp</h5>
+      <!-- <vue-qr
         v-if="token != null"
         :text="token"
         :margin="10"
         :size="350"
-      ></vue-qr>
-       <!-- logoSrc="whatsapp.png"
-        :logoMargin="7"
-        :logoCornerRadius="30" -->
+      ></vue-qr> -->
+      <img class="mt-4" width="264" height="264" v-if="token != null" :src="'data:image/jpg;base64,' + token"/>
+
       <div v-else class="my-auto">
         <b-spinner></b-spinner>
       </div>
@@ -70,10 +69,10 @@
 
 
 <script>
-import VueQr from "vue-qr";
+// import VueQr from "vue-qr";
 
 export default {
-  components: { VueQr },
+  // components: { VueQr },
   props: ["task"],
   data() {
     return {

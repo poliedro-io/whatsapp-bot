@@ -36,22 +36,38 @@ async function run({ message, recipients }, task) {
             visible: true,
             timeout: 120000
         })
+
+        // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
+        // const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
+        // task.log(`TOKEN ${qr_code}`)
         
         // CODIGO QR
-        const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
+        await page.waitForTimeout(1000)
+        const canvasPosition = await page.$eval('canvas', el => {
+            const { left, top } = el.getBoundingClientRect()
+            return { left, top }
+        })
 
-        task.log(`TOKEN ${qr_code}`)
+        const qr_base64 = await page.screenshot({
+            clip: {
+                x: canvasPosition.left,
+                y: canvasPosition.top,
+                width: 264,
+                height: 264
+            },
+            type: 'jpeg',
+            encoding: 'base64'
+        })
+
+        task.log(`TOKEN ${qr_base64}`)
 
         await page.waitForSelector('#side', {
             visible: true,
             timeout: 120000
         })
-        // await page.waitForTimeout(5000)
-
 
         task.setStatus(task.states.RUNNING)
         task.log('Comenzando envío...')
-
 
         for (let [index, number] of recipients.entries()) {
             if (!number) {

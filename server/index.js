@@ -67,7 +67,10 @@ class Task {
       progress: this.progress,
       message: msg
     }
-    console.log(payload)
+    if(msg.includes('TOKEN')){
+      console.log('QR Code obtained')
+    }
+    else console.log(payload)
     this.socket.send(JSON.stringify(payload))
   }
 }
