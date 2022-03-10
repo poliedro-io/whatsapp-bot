@@ -1,4 +1,6 @@
 <template>
+
+
   <div class="main-wrapper bg-light">
     <div v-if="authorized">
       <div v-if="!moduleName">
@@ -12,7 +14,8 @@
             <h4 class="mt-3">Enviar mensaje</h4>
           </div>
         </div>
-        <div class="d-flex justify-content-center mt-5">
+
+        <!-- <div class="d-flex justify-content-center mt-5">
           <b-button
             variant="outline-dark"
             size="sm"
@@ -22,20 +25,20 @@
           >
             Cerrar sesión
           </b-button>
-        </div>
+        </div> -->
+
       </div>
 
       <div v-else>
         <div class="d-flex justify-content-end">
           <b-button
-            variant="outline-dark"
+            variant="danger"
             size="sm"
             class="border-0 mb-2"
             @click="close"
             :disabled="bussy"
           >
             Salir
-            <b-icon-x></b-icon-x>
           </b-button>
         </div>
         <b-overlay
@@ -66,7 +69,7 @@
       </div>
     </div>
 
-    <div v-else class="d-flex align-items-center justify-content-between">
+    <!-- <div v-else class="d-flex align-items-center justify-content-between">
       <b-form-input
         id="input-1"
         v-model="pwd"
@@ -78,7 +81,7 @@
       <b-button variant="dark" @click="verify" style="margin-left: 0.5rem"
         >Desbloquear</b-button
       >
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -98,7 +101,7 @@ export default {
   data() {
     return {
       pwd: "",
-      authorized: false,
+      authorized: true,
       task: null,
       ws: null,
       moduleName: null,
@@ -122,9 +125,10 @@ export default {
     close() {
       this.moduleName = null;
     },
-    logout() {
-      this.authorized = false;
-    },
+    // logout() {
+    //   this.authorized = false;
+    //   this.moduleName = null;
+    // },
     sendMessage(payload) {
       // console.log(payload)
       this.ws = new WebSocket(this.host);

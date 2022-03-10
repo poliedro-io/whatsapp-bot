@@ -30,35 +30,39 @@
       </div>
     </transition>
 
-    <div v-if="completed">
-      <b-button class="me-2" size="sm" variant="outline-success" @click="clean"
-        >Cerrar
-      </b-button>
+    <div class="mt-3 d-flex justify-content-end">
+      <div v-if="completed">
+        <b-button
+          class="me-2"
+          size="sm"
+          variant="outline-success"
+          @click="clean"
+          >Cerrar
+        </b-button>
 
-      <a :href="downloadLink" download class="btn btn-sm btn-success">
-        Descargar archivo
-      </a>
-
+        <a :href="downloadLink" download class="btn btn-sm btn-success">
+          Descargar archivo
+        </a>
+      </div>
+      <div v-else>
+        <b-button
+          variant="link"
+          size="sm"
+          class="text-decoration-none text-danger"
+          @click="cancel"
+          >Cancelar proceso
+        </b-button>
+      </div>
     </div>
-
-    <!-- <b-button
-      v-else
-      variant="link"
-      size="sm"
-      class="text-decoration-none text-danger"
-      @click="cancel"
-      >Cancelar proceso
-    </b-button> -->
   </div>
 </template>
 
 <script>
-
 export default {
   props: ["task"],
   data() {
     return {
-      logs: '',
+      logs: "",
       token: null,
     };
   },
@@ -74,14 +78,12 @@ export default {
     value() {
       return this.task.progress * 100;
     },
-    downloadLink(){
-      return 'http://localhost:3000/download'
-    }
+    downloadLink() {
+      return "http://localhost:3000/download";
+    },
   },
   methods: {
-    downloadFile(){
-
-    },
+    downloadFile() {},
 
     cancel() {
       this.$bvModal
@@ -120,8 +122,8 @@ export default {
 }
 .logs-box {
   background-color: #f3f3f3;
-  height: 200px;
-  width: 95%;
+  height: 100px;
+  width: 100%;
   overflow-y: auto;
   margin-top: 0.8rem;
   border-radius: 0.3rem;

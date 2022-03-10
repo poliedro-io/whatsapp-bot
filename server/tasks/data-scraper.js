@@ -124,7 +124,8 @@ function updateData(items, term) {
         }
         else return true
     })
-    let fileData = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
+    let fileData
+    fileData = JSON.parse(fs.readFileSync('data/data.json', 'utf-8'));
     fileData = fileData.concat(itemsWithTerm)
     fs.writeFileSync('data/data.json', JSON.stringify(fileData), 'utf-8');
 
