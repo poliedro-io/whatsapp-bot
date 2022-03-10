@@ -1,24 +1,14 @@
-# vue-1
-
-## Project setup
+### Descargar cambios
 ```
-yarn install
+git pull
 ```
 
-### Compiles and hot-reloads for development
+### Construir App
 ```
-yarn serve
-```
-
-### Compiles and minifies for production
-```
-yarn build
+npm run build
 ```
 
-### Lints and fixes files
+### Ejecutar
 ```
-yarn lint
+node server
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
