@@ -1,3 +1,4 @@
+
 <template>
   <div
     class="content-wrapper mx-auto py-auto d-flex flex-column align-items-stretch justify-content-between"
@@ -7,15 +8,16 @@
       style="height: 100%"
       class="d-flex flex-column align-items-center"
     >
-      <h5>Necesitas otorgar permiso desde whatsapp</h5>
-
+      <h5>Dar permiso</h5>
       <vue-qr
         v-if="token != null"
-        class="p-5 mx-auto"
-        style="width: 300px"
         :text="token"
-        :size="300"
+        :margin="10"
+        :size="350"
       ></vue-qr>
+       <!-- logoSrc="whatsapp.png"
+        :logoMargin="7"
+        :logoCornerRadius="30" -->
       <div v-else class="my-auto">
         <b-spinner></b-spinner>
       </div>
@@ -59,7 +61,7 @@
       v-else
       variant="link"
       size="sm"
-      class="text-decoration-none text-danger"
+      class="text-decoration-none text-danger mt-2"
       @click="cancel"
       >{{ loggedIn ? "Detener envío" : "Cancelar" }}
     </b-button>

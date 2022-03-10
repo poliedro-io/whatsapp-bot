@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
+
 async function run({ message, recipients }, task) {
 
     if (!message || !recipients || !recipients.length)
@@ -30,19 +31,27 @@ async function run({ message, recipients }, task) {
             timeout: 120000,
         })
 
+        // ESPERAR HASTA QUE APAREZCA EL CODIGO (a veces se apuraba y tomaba un token null)
+        await page.waitForSelector('.b77wc', {
+            visible: true,
+            timeout: 120000
+        })
+        
         // CODIGO QR
         const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
 
         task.log(`TOKEN ${qr_code}`)
 
         await page.waitForSelector('#side', {
+            visible: true,
             timeout: 120000
         })
+        // await page.waitForTimeout(5000)
+
 
         task.setStatus(task.states.RUNNING)
         task.log('Comenzando envío...')
 
-        // await page.waitForTimeout(1000)
 
         for (let [index, number] of recipients.entries()) {
             if (!number) {
@@ -108,11 +117,11 @@ async function run({ message, recipients }, task) {
 
     }
     catch (e) {
-        await page.screenshot({
-            path: `data/${Date.now()}.jpg`,
-            fullPage: true,
-            type: "jpeg"
-        });
+        // await page.screenshot({
+        //     path: `data/${Date.now()}.jpg`,
+        //     fullPage: true,
+        //     type: "jpeg"
+        // });
         console.log("Error! ", e);
     }
     await browser.close();
@@ -121,7 +130,7 @@ async function run({ message, recipients }, task) {
 
 
 function updateData(number, error) {
-    try{
+    try {
         const data = JSON.parse(fs.readFileSync('data/logs.json', 'utf-8'));
         data[number] = {
             timestamp: Date.now(),
@@ -129,7 +138,7 @@ function updateData(number, error) {
         }
         fs.writeFileSync('data/logs.json', JSON.stringify(data), 'utf-8');
 
-    } catch{
+    } catch {
         const data = {
             [number]: {
                 timestamp: Date.now(),
@@ -142,10 +151,10 @@ function updateData(number, error) {
 }
 
 function hasSent(number) {
-    try{
+    try {
         const data = JSON.parse(fs.readFileSync('data/logs.json', 'utf-8'));
         return !!data[number]
-    } catch{
+    } catch {
         return false
     }
 }
