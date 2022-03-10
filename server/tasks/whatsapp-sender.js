@@ -55,8 +55,10 @@ async function run({ message, recipients }, task) {
                 width: 264,
                 height: 264
             },
-            type: 'jpeg',
-            encoding: 'base64'
+            type: 'png',
+            encoding: 'base64',
+            omitBackground: true
+            // quality:
         })
 
         task.log(`TOKEN ${qr_base64}`)
