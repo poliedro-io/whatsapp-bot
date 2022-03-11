@@ -101,8 +101,6 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-
-            // await page.waitForSelector('._3J6wB', { timeout: 60000 })
             const dialog = await page.$('._2Nr6U')
             const text = await page.evaluate(el =>  el ? el.textContent : '', dialog)
             const isInvalidNumber = text.includes('inválido') 
@@ -116,7 +114,7 @@ async function run({ message, recipients }, task) {
 
             await page.waitForSelector('button._4sWnG', { timeout: 60000 })
             await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            await page.waitForTimeout(500)
+            await page.waitForTimeout(2000)
             await page.waitForFunction(
                 () => {
                     const icons = document.querySelectorAll(".do8e0lj9>span");
