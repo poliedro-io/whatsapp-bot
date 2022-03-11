@@ -10,7 +10,7 @@ async function run({ message, recipients }, task) {
     task.log('Comenzando.')
 
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -40,9 +40,9 @@ async function run({ message, recipients }, task) {
         // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
         // const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
         // task.log(`TOKEN ${qr_code}`)
-        
+
         // CODIGO QR
-        await page.waitForTimeout(1000)
+
         const canvasPosition = await page.$eval('canvas', el => {
             const { left, top } = el.getBoundingClientRect()
             return { left, top }
@@ -92,6 +92,7 @@ async function run({ message, recipients }, task) {
                 timeout: 120000
             })
             // await page.waitForFunction(`!document.querySelector('progress')`, { timeout: 180000 })
+
             try {
                 await page.waitForSelector('#side', { timeout: 180000 })
             } catch (err) {
@@ -99,14 +100,13 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            // await page.waitForTimeout(1000)
 
             const invalidNumber = await page.$('._3J6wB') // MODAL NUMERO INVALIDO
 
             if (invalidNumber) {
                 task.setProgress((index + 1) / recipients.length)
-                task.log(`[${index + 1}/${recipients.length}] Número sin whatsapp: ${number}`)
-                updateData(number, 'Sin whatsapp')
+                task.log(`[${index + 1}/${recipients.length}] Número inválido: ${number}`)
+                updateData(number, 'Inválido')
                 continue
             }
 
@@ -115,21 +115,12 @@ async function run({ message, recipients }, task) {
             task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
             updateData(number)
 
-            // await page.waitForTimeout(1000)
 
             await page.waitForFunction(
                 `document.querySelectorAll(".do8e0lj9>span")[document.querySelectorAll(".do8e0lj9>span").length-1].getAttribute('data-icon')!='msg-time'`
                 , { timeout: 120000 }
             );
 
-
-            // Borra el contenido por si acaso
-            // no es necesario porque al enviar se borra el mensaje automaticamente
-            // await page.click('._13NKt')    // BARRA DE TEXTO
-            // // eslint-disable-next-line no-unused-vars
-            // for (let _ of message) {
-            //     await page.keyboard.press('Backspace');
-            // }
         }
 
     }
