@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
+let browser
 
 async function run({ message, recipients }, task) {
 
@@ -9,16 +10,17 @@ async function run({ message, recipients }, task) {
 
     task.log('Comenzando.')
 
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
         headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
+            '--start-fullscreen'
         ]
     });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3641.0 Safari/537.36');
-
+    // await page.setViewport({ width: 1024, height: 768});
 
     page.on('dialog', async dialog => {
         console.log(dialog.message());
@@ -38,29 +40,29 @@ async function run({ message, recipients }, task) {
         })
 
         // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
-        // const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
-        // task.log(`TOKEN ${qr_code}`)
+        const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
+        task.log(`TOKEN ${qr_code}`)
 
         // CODIGO QR
 
-        const canvasPosition = await page.$eval('canvas', el => {
-            const { left, top } = el.getBoundingClientRect()
-            return { left, top }
-        })
+        // const canvasPosition = await page.$eval('canvas', el => {
+        //     const { left, top } = el.getBoundingClientRect()
+        //     return { left, top }
+        // })
 
-        const qr_base64 = await page.screenshot({
-            clip: {
-                x: canvasPosition.left,
-                y: canvasPosition.top,
-                width: 264,
-                height: 264
-            },
-            type: 'jpeg',
-            encoding: 'base64',
-            quality: 100
-        })
+        // const qr_base64 = await page.screenshot({
+        //     clip: {
+        //         x: canvasPosition.left,
+        //         y: canvasPosition.top,
+        //         width: 264,
+        //         height: 264
+        //     },
+        //     type: 'jpeg',
+        //     encoding: 'base64',
+        //     quality: 100
+        // })
 
-        task.log(`TOKEN ${qr_base64}`)
+        task.log(`TOKEN ${qr_code}`)
 
         await page.waitForSelector('#side', {
             visible: true,
@@ -91,7 +93,6 @@ async function run({ message, recipients }, task) {
                 waitUntil: 'networkidle0',
                 timeout: 120000
             })
-            // await page.waitForFunction(`!document.querySelector('progress')`, { timeout: 180000 })
 
             try {
                 await page.waitForSelector('#side', { timeout: 180000 })
@@ -101,39 +102,41 @@ async function run({ message, recipients }, task) {
             }
 
 
-            const invalidNumber = await page.$('._3J6wB') // MODAL NUMERO INVALIDO
+            // await page.waitForSelector('._3J6wB', { timeout: 60000 })
+            const dialog = await page.$('._2Nr6U')
+            const text = await page.evaluate(el =>  el ? el.textContent : '', dialog)
+            const isInvalidNumber = text.includes('inválido') 
 
-            if (invalidNumber) {
+            if (isInvalidNumber) {
                 task.setProgress((index + 1) / recipients.length)
                 task.log(`[${index + 1}/${recipients.length}] Número inválido: ${number}`)
                 updateData(number, 'Inválido')
                 continue
             }
 
+            await page.waitForSelector('button._4sWnG', { timeout: 60000 })
             await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            task.setProgress((index + 1) / recipients.length)
-            task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
-            updateData(number)
-
-
+            await page.waitForTimeout(500)
             await page.waitForFunction(
                 `document.querySelectorAll(".do8e0lj9>span")[document.querySelectorAll(".do8e0lj9>span").length-1].getAttribute('data-icon')!='msg-time'`
                 , { timeout: 120000 }
             );
 
+            task.setProgress((index + 1) / recipients.length)
+            task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
+            updateData(number)
+
+
         }
 
     }
     catch (e) {
-        // await page.screenshot({
-        //     path: `data/${Date.now()}.jpg`,
-        //     fullPage: true,
-        //     type: "jpeg"
-        // });
         console.log("Error! ", e);
     }
+
     await browser.close();
     return 'Completado!'
+
 }
 
 
@@ -170,4 +173,3 @@ function hasSent(number) {
 module.exports = {
     run
 }
-

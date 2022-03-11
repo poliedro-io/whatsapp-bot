@@ -1,6 +1,4 @@
 <template>
-
-
   <div class="main-wrapper bg-light">
     <div v-if="authorized">
       <div v-if="!moduleName">
@@ -26,7 +24,6 @@
             Cerrar sesión
           </b-button>
         </div> -->
-
       </div>
 
       <div v-else>
@@ -48,7 +45,10 @@
           :opacity="0.92"
           rounded="sm"
         >
-          <whatsapp-card v-on:sendMessage="sendMessage"></whatsapp-card>
+          <whatsapp-card
+            v-on:cleanLogs="cleanLogs"
+            v-on:sendMessage="sendMessage"
+          ></whatsapp-card>
           <template #overlay>
             <sending-message v-on:clean="clean" :task="task"></sending-message>
           </template>
@@ -140,6 +140,10 @@ export default {
         );
       };
       this.ws.onclose = () => (this.task = null);
+    },
+    cleanLogs() {
+        this.ws = new WebSocket(this.host);
+        this.ws.onopen = () => {this.ws.send(JSON.stringify({cleanLogs: true}))}
     },
     getData(payload) {
       console.log(payload);

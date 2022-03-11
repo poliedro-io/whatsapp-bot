@@ -30,13 +30,19 @@
     </div>
     <div class="card-footer d-flex justify-content-between">
       <div>{{ recipientsArr.length }} destinatarios</div>
-      <button
-        :disabled="!recipientsArr.length || message == ''"
-        class="btn btn-success"
-        @click="showConfirmDialog"
-      >
-        Enviar mensaje
-      </button>
+      <div>
+        <button class="btn btn-secondary" @click="cleanLogs">
+          Limpiar registro
+        </button>
+        <button
+          :disabled="!recipientsArr.length || message == ''"
+          class="btn btn-success"
+          style="margin-left: .5rem"
+          @click="sendMessage"
+        >
+          Enviar mensaje
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -45,8 +51,8 @@
 export default {
   data() {
     return {
-      message: "",
-      recipientsStr: "",
+      message: "*mensaje de prueba*",
+      recipientsStr: "971524620\n971906867\n996667538",
     };
   },
   computed: {
@@ -93,6 +99,10 @@ export default {
         recipients: this.formatNumbers(this.recipientsArr),
       };
       this.$emit("sendMessage", payload);
+    },
+    cleanLogs() {
+      console.log('Limpiando registros...')
+      this.$emit("cleanLogs");
     },
 
     formatNumbers(array) {

@@ -1,5 +1,6 @@
 const express = require('express')
 const { Server } = require('ws');
+const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
 // const INDEX = '/index.html';
@@ -29,6 +30,9 @@ function handleMessage(socket, payload) {
     const task = new Task(method, params, socket)
     task.run()
   }
+  if(payloadObject['cleanLogs']){
+    cleanLogs()
+  }
 }
 
 class Task {
@@ -44,6 +48,7 @@ class Task {
     this.status = this.states.PREPARING
     this.progress = 0;
   }
+
   run() {
     require(`./tasks/${this.method}`).run(this.params, this)
       .then(res => {
@@ -67,10 +72,16 @@ class Task {
       progress: this.progress,
       message: msg
     }
-    if(msg.includes('TOKEN')){
-      console.log('QR Code obtained')
-    }
-    else console.log(payload)
+    console.log(payload)
     this.socket.send(JSON.stringify(payload))
   }
+}
+
+function cleanLogs(){
+  fs.unlink('data/logs.json', err => {
+    if(err){
+      console.error(err);
+      return
+    }
+  })
 }
