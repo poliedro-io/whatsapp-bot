@@ -40,7 +40,7 @@ async function run({ message, recipients }, task) {
         })
 
         // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
-        const qr_code = await page.$eval('._2UwZ_', el => el.getAttribute('data-ref'))
+        const qr_code = await page.$eval('._2UwZ_', el => el ? el.getAttribute('data-ref') : '')
         task.log(`TOKEN ${qr_code}`)
 
         // CODIGO QR
