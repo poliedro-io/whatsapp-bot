@@ -114,12 +114,12 @@ async function run({ message, recipients }, task) {
 
             await page.waitForSelector('button._4sWnG', { timeout: 60000 })
             await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            await page.waitForTimeout(2000)
+            await page.waitForTimeout(3000)
             await page.waitForFunction(
                 () => {
                     const icons = document.querySelectorAll(".do8e0lj9>span");
                     if(icons.length){
-                        return icons[icons.length - 1].getAttribute('data-icon')!='msg-time'
+                        return icons[icons.length - 1].getAttribute('data-icon') != 'msg-time'
                     }
                     else return true;
                 }
