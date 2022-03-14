@@ -113,22 +113,20 @@ async function run({ message, recipients }, task) {
             }
 
             await page.waitForSelector('button._4sWnG', { timeout: 60000 })
+            await page.waitForTimeout(200)
+            
             await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            await page.waitForTimeout(3000)
+            await page.waitForTimeout(200)
             await page.waitForFunction(
                 () => {
                     const icons = document.querySelectorAll(".do8e0lj9>span");
-                    if(icons.length){
-                        return icons[icons.length - 1].getAttribute('data-icon') != 'msg-time'
+                    if(!icons)
+                        return false
+                    const currLength = icons.length
+                    if(currLength){
+                        return (icons[currLength - 1].getAttribute('data-icon') != 'msg-time')
                     }
                     return false
-                    // const messages = document.querySelectorAll("._2wUmf")
-                    // if(!messages.length)
-                    //     return false
-                    // const isMessageWritten = messages[messages.length - 1].querySelector('._1Gy50>span>span').innerHTML
-                    // const isMessageSended = messages[messages.length - 1].querySelector('.do8e0lj9>span').getAttribute('data-icon') != 'msg-time'
-                    // console.log(isMessageWritten, isMessageSended, message);
-                    // return false && isMessageSended
                 }
                 , { timeout: 120000 }
             );
