@@ -101,9 +101,12 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            const dialog = await page.$('._2Nr6U')
-            const text = await page.evaluate(el =>  el ? el.textContent : '', dialog)
-            const isInvalidNumber = text.includes('inválido') 
+            // arreglar este código, no funciona siempre (tal vez sea necesario poner waitForTimeout())
+            // const dialog = await page.$('._2Nr6U')
+
+            await page.waitForTimeout(2000);
+            const text = await page.$eval('.2Nr6U', (el) => el ? el.textContent : '')
+            const isInvalidNumber = text.includes('inválido')
 
             if (isInvalidNumber) {
                 task.setProgress((index + 1) / recipients.length)
@@ -112,32 +115,33 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            try{
-                await page.waitForSelector('button._4sWnG', { timeout: 30000 })
+
+            try {
+                await page.waitForSelector('button._4sWnG', { timeout: 10000 })
                 await page.waitForTimeout(500);
                 await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
                 await page.waitForTimeout(500);
                 await page.waitForFunction(
                     () => {
                         const icons = document.querySelectorAll(".do8e0lj9>span");
-                        if(!icons)
+                        if (!icons)
                             return false
                         const currLength = icons.length
-                        if(currLength){
+                        if (currLength) {
                             return (icons[currLength - 1].getAttribute('data-icon') != 'msg-time')
                         }
                         return false
                     }
                     , { timeout: 120000 }
                 );
-    
+
                 task.setProgress((index + 1) / recipients.length)
                 task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
                 updateData(number)
             } catch {
                 continue
             }
-            
+
 
         }
 
