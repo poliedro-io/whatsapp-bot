@@ -113,10 +113,10 @@ async function run({ message, recipients }, task) {
             }
 
             await page.waitForSelector('button._4sWnG', { timeout: 60000 })
-            await page.waitForTimeout(200)
+            await page.waitForTimeout(500);
             
             await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            await page.waitForTimeout(200)
+            await page.waitForTimeout(500);
             await page.waitForFunction(
                 () => {
                     const icons = document.querySelectorAll(".do8e0lj9>span");
