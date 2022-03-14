@@ -121,7 +121,14 @@ async function run({ message, recipients }, task) {
                     if(icons.length){
                         return icons[icons.length - 1].getAttribute('data-icon') != 'msg-time'
                     }
-                    else return true;
+                    return false
+                    // const messages = document.querySelectorAll("._2wUmf")
+                    // if(!messages.length)
+                    //     return false
+                    // const isMessageWritten = messages[messages.length - 1].querySelector('._1Gy50>span>span').innerHTML
+                    // const isMessageSended = messages[messages.length - 1].querySelector('.do8e0lj9>span').getAttribute('data-icon') != 'msg-time'
+                    // console.log(isMessageWritten, isMessageSended, message);
+                    // return false && isMessageSended
                 }
                 , { timeout: 120000 }
             );
