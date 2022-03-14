@@ -112,29 +112,32 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            await page.waitForSelector('button._4sWnG', { timeout: 60000 })
-            await page.waitForTimeout(500);
-            
-            await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-            await page.waitForTimeout(500);
-            await page.waitForFunction(
-                () => {
-                    const icons = document.querySelectorAll(".do8e0lj9>span");
-                    if(!icons)
+            try{
+                await page.waitForSelector('button._4sWnG', { timeout: 30000 })
+                await page.waitForTimeout(500);
+                await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
+                await page.waitForTimeout(500);
+                await page.waitForFunction(
+                    () => {
+                        const icons = document.querySelectorAll(".do8e0lj9>span");
+                        if(!icons)
+                            return false
+                        const currLength = icons.length
+                        if(currLength){
+                            return (icons[currLength - 1].getAttribute('data-icon') != 'msg-time')
+                        }
                         return false
-                    const currLength = icons.length
-                    if(currLength){
-                        return (icons[currLength - 1].getAttribute('data-icon') != 'msg-time')
                     }
-                    return false
-                }
-                , { timeout: 120000 }
-            );
-
-            task.setProgress((index + 1) / recipients.length)
-            task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
-            updateData(number)
-
+                    , { timeout: 120000 }
+                );
+    
+                task.setProgress((index + 1) / recipients.length)
+                task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
+                updateData(number)
+            } catch {
+                continue
+            }
+            
 
         }
 
