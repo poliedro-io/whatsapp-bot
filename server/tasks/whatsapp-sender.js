@@ -101,12 +101,14 @@ async function run({ message, recipients }, task) {
                 continue
             }
 
-            // arreglar este código, no funciona siempre (tal vez sea necesario poner waitForTimeout())
-            // const dialog = await page.$('._2Nr6U')
-
-            await page.waitForTimeout(2000);
-            const text = await page.$eval('.2Nr6U', (el) => el ? el.textContent : '')
-            const isInvalidNumber = text.includes('inválido')
+            let isInvalidNumber
+            try{
+                await page.waitForSelector('._3J6wB', { timeout: 2000 })
+                const text = await page.$eval('._2Nr6U', (el) => el ? el.textContent : '')
+                isInvalidNumber = text.includes('inválido')
+            } catch{
+                isInvalidNumber = false
+            }
 
             if (isInvalidNumber) {
                 task.setProgress((index + 1) / recipients.length)
@@ -114,7 +116,6 @@ async function run({ message, recipients }, task) {
                 updateData(number, 'Inválido')
                 continue
             }
-
 
             try {
                 await page.waitForSelector('button._4sWnG', { timeout: 10000 })
