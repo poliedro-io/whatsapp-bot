@@ -122,7 +122,7 @@ async function run({ message, recipients }, task) {
                 await page.waitForSelector('button._4sWnG', { timeout: 5000 })
                 await page.waitForTimeout(300);
 
-                const isSpam = page.$$(".do8e0lj9>span");
+                const isSpam = await page.$$(".do8e0lj9>span");
                 if(isSpam.length){
                     continue
                 }
