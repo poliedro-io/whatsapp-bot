@@ -88,14 +88,14 @@ async function run({ message, recipients }, task) {
             if (task.socket.readyState != 1)
                 throw Error('Abortado')
 
-            var url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
+            const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
             await page.goto(url, {
                 waitUntil: 'networkidle0',
-                timeout: 120000
+                timeout: 60000
             })
 
             try {
-                await page.waitForSelector('#side', { timeout: 180000 })
+                await page.waitForSelector('#side', { timeout: 60000 })
             } catch (err) {
                 console.log('Error: no cargó la página')
                 continue
@@ -118,10 +118,17 @@ async function run({ message, recipients }, task) {
             }
 
             try {
-                await page.waitForSelector('button._4sWnG', { timeout: 10000 })
-                await page.waitForTimeout(500);
+
+                await page.waitForSelector('button._4sWnG', { timeout: 5000 })
+                await page.waitForTimeout(300);
+
+                const isSpam = page.$$(".do8e0lj9>span");
+                if(isSpam.length){
+                    continue
+                }
+
                 await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-                await page.waitForTimeout(500);
+                await page.waitForTimeout(300);
                 await page.waitForFunction(
                     () => {
                         const icons = document.querySelectorAll(".do8e0lj9>span");
@@ -133,7 +140,7 @@ async function run({ message, recipients }, task) {
                         }
                         return false
                     }
-                    , { timeout: 120000 }
+                    , { timeout: 20000 }
                 );
 
                 task.setProgress((index + 1) / recipients.length)
