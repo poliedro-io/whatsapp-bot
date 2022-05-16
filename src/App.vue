@@ -130,7 +130,7 @@ export default {
     //   this.moduleName = null;
     // },
     sendMessage(payload) {
-      // console.log(payload)
+      console.log(payload)
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
 

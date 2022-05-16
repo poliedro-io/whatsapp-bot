@@ -8,6 +8,23 @@
         <div class="col-8">
           <label>Mensaje</label>
           <textarea class="form-control" rows="15" v-model="message"></textarea>
+
+          <div class="mt-2 form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="defaultCheck1"
+              v-model="attachImage"
+            />
+            <label class="form-check-label" for="defaultCheck1">
+              Adjuntar imagen
+            </label>
+          </div>
+            <small v-if="attachImage" class="form-text text-muted"
+              >Copia la imagen que quieres enviar a la carpeta 'data' y cámbiale
+              el nombre a 'imagen.png' (la imagen debe estar en formato
+              png).</small
+            >
         </div>
         <div class="col-4">
           <label class="d-flex justify-content-between">
@@ -53,6 +70,7 @@ export default {
     return {
       message: "*mensaje de prueba*",
       recipientsStr: "971524620\n971906867\n996667538",
+      attachImage: false,
     };
   },
   computed: {
@@ -97,11 +115,12 @@ export default {
       let payload = {
         message: this.message,
         recipients: this.formatNumbers(this.recipientsArr),
+        attachImage: this.attachImage,
       };
       this.$emit("sendMessage", payload);
     },
     cleanLogs() {
-      console.log('Limpiando registros...')
+      console.log("Limpiando registros...");
       this.$emit("cleanLogs");
     },
 

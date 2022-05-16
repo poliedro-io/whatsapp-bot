@@ -3,12 +3,13 @@ const fs = require('fs');
 
 let browser
 
-async function run({ message, recipients }, task) {
+async function run({ message, recipients, attachImage }, task) {
 
     if (!message || !recipients || !recipients.length)
         return ''
 
     task.log('Comenzando.')
+    task.log(attachImage)
 
     browser = await puppeteer.launch({
         headless: false,
@@ -44,11 +45,6 @@ async function run({ message, recipients }, task) {
         task.log(`TOKEN ${qr_code}`)
 
         // CODIGO QR
-
-        // const canvasPosition = await page.$eval('canvas', el => {
-        //     const { left, top } = el.getBoundingClientRect()
-        //     return { left, top }
-        // })
 
         // const qr_base64 = await page.screenshot({
         //     clip: {
@@ -102,11 +98,11 @@ async function run({ message, recipients }, task) {
             }
 
             let isInvalidNumber
-            try{
+            try {
                 await page.waitForSelector('._3J6wB', { timeout: 2000 })
                 const text = await page.$eval('._2Nr6U', (el) => el ? el.textContent : '')
                 isInvalidNumber = text.includes('inválido')
-            } catch{
+            } catch {
                 isInvalidNumber = false
             }
 
@@ -119,16 +115,37 @@ async function run({ message, recipients }, task) {
 
             try {
 
-                await page.waitForSelector('button._4sWnG', { timeout: 5000 })
-                await page.waitForTimeout(300);
+                // ADJUNTAR IMAGEN
 
-                // const isSpam = await page.$$(".do8e0lj9>span");
-                // if(isSpam.length){
-                //     continue
-                // }
+                if (attachImage) {
+                    const clipButton = '._26lC3[aria-label="Adjuntar"] span[data-testid="clip"]'
+                    await page.waitForSelector(clipButton, { timeout: 5000 });
+                    await page.waitForTimeout(1000);
+                    await page.click(clipButton);
+                    await page.waitForTimeout(1000);
 
-                await page.click('button._4sWnG')  // BOTON ENVIAR MENSAJE
-                await page.waitForTimeout(300);
+                    const imageButton = 'button[aria-label="Fotos y videos"]';
+                    await page.waitForSelector(imageButton, { timeout: 5000 });
+
+                    const [fileChooser] = await Promise.all([
+                        page.waitForFileChooser(),
+                        page.click(imageButton),
+                    ]);
+                    await fileChooser.accept(['data/imagen.png']);
+
+                    await page.waitForSelector('div[aria-label="Enviar"]')
+                    page.click('div[aria-label="Enviar"]');
+                    await page.waitForTimeout(300);
+                }
+
+                else {
+                    const sendButton = '._3HQNh._1Ae7k button'
+                    await page.waitForSelector(sendButton, { timeout: 5000 })
+                    await page.click(sendButton)
+                    await page.waitForTimeout(300);
+                }
+
+
                 await page.waitForFunction(
                     () => {
                         const icons = document.querySelectorAll(".do8e0lj9>span");
@@ -145,8 +162,10 @@ async function run({ message, recipients }, task) {
 
                 task.setProgress((index + 1) / recipients.length)
                 task.log(`[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`)
-                updateData(number)
-            } catch {
+                updateData(number);
+
+            } catch (err) {
+                task.log(err);
                 continue
             }
 
