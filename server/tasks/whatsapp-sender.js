@@ -132,7 +132,8 @@ async function run({ message, recipients, attachImage }, task) {
                         page.click(imageButton),
                     ]);
                     await fileChooser.accept(['data/imagen.png']);
-
+                    await page.waitForSelector('.konvajs-content');
+                    await page.waitForTimeout(1000);
                     await page.waitForSelector('div[aria-label="Enviar"]')
                     page.click('div[aria-label="Enviar"]');
                     await page.waitForTimeout(300);
