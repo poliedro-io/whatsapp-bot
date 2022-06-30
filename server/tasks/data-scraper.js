@@ -18,7 +18,7 @@ async function run({ keyWords, cities }, task) {
 
     resetData()
 
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ "headless": false });
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
@@ -64,9 +64,9 @@ async function runByTerm(browser, term, task) {
             isNextable = disabledAttr ? false : true
 
             // obtener 20 items (1 pagina)
-            let links = await getPageLinks(page, resultsSelector)
+            let links = await getPageLinks(page, resultsSelector);
             let pageItems = await scrapSinglePage(links, browser)
-
+            console.log(pageItems);
             // actualizar archivo json
             let added = updateData(pageItems, term)
             count += added
@@ -94,25 +94,33 @@ async function runByTerm(browser, term, task) {
 
 async function scrapSinglePage(links, browser) {
     const items = await Promise.all(links.map(async (link) => {
-        const page = await browser.newPage()
-        await page.goto(link, {
-            waitUntil: 'domcontentloaded'
-        })
-        await page.waitForSelector('.QSFF4-text.gm2-body-2')
-        let telefono, direccion, nombre
+        const page = await browser.newPage();
         try {
-            telefono = await page.$eval('button[aria-label*="Teléfono"] .QSFF4-text.gm2-body-2', el => el.textContent)
+
+            await page.goto(link, {
+                waitUntil: 'domcontentloaded'
+            })
+            await page.waitForSelector('.Io6YTe', {timeout: 20000})
+        } catch{
+            return null
+        }
+            let telefono, direccion, nombre, website
+        try {
+            nombre = await page.$eval('.DUwDvf span:first-child', el => el.textContent)
+        } catch { nombre = null }
+        try {
+            telefono = await page.$eval('button[aria-label*="Teléfono"] .Io6YTe', el => el.textContent)
         } catch { telefono = null }
         try {
-            direccion = await page.$eval('button[aria-label*="Dirección"] .QSFF4-text.gm2-body-2', el => el.textContent)
+            direccion = await page.$eval('button[aria-label*="Dirección"] .Io6YTe', el => el.textContent)
         } catch { direccion = null }
         try {
-            nombre = await page.$eval('.x3AX1-LfntMc-header-title-title.gm2-headline-5 span:first-child', el => el.textContent)
-        } catch { nombre = null }
+            website = await page.$eval('a[aria-label*="Sitio web"] .Io6YTe', el => el.textContent)
+        } catch { website = null }
         await page.close()
-        return { nombre, telefono, direccion }
+        return { nombre, telefono, direccion, website }
     }))
-    return items
+    return items.filter(el => el !== null)
 }
 
 function updateData(items, term) {
@@ -142,7 +150,7 @@ async function getPageLinks(page, selector) {
         await page.evaluate(c => c.scroll(0, c.scrollHeight), resultsContainer)
         await page.waitForTimeout(500)
     }
-    return page.$$eval('.a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd', (cards) => cards.map(el => el.getAttribute('href')))
+    return page.$$eval('.hfpxzc', (cards) => cards.map(el => el.getAttribute('href')))
 
 }
 

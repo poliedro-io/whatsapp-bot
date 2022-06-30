@@ -119,7 +119,7 @@ async function run({ message, recipients, attachImage }, task) {
 
                 if (attachImage) {
                     const clipButton = '._26lC3[aria-label="Adjuntar"] span[data-testid="clip"]'
-                    await page.waitForSelector(clipButton, { timeout: 5000 });
+                    await page.waitForSelector(clipButton, { timeout: 10000 });
                     await page.waitForTimeout(1000);
                     await page.click(clipButton);
                     await page.waitForTimeout(1000);
@@ -133,10 +133,9 @@ async function run({ message, recipients, attachImage }, task) {
                     ]);
                     await fileChooser.accept(['data/imagen.png']);
                     await page.waitForSelector('.konvajs-content');
-                    await page.waitForTimeout(1000);
                     await page.waitForSelector('div[aria-label="Enviar"]')
                     page.click('div[aria-label="Enviar"]');
-                    await page.waitForTimeout(300);
+                    await page.waitForTimeout(1000);
                 }
 
                 else {
