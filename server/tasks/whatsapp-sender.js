@@ -62,7 +62,7 @@ async function run({ message, recipients, attachImage }, task) {
 
         await page.waitForSelector('#side', {
             visible: true,
-            timeout: 120000
+            timeout: 30000
         })
 
         task.setStatus(task.states.RUNNING)
@@ -85,10 +85,14 @@ async function run({ message, recipients, attachImage }, task) {
                 throw Error('Abortado')
 
             const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
-            await page.goto(url, {
-                waitUntil: 'networkidle0',
-                timeout: 60000
-            })
+            try{
+                await page.goto(url, {
+                    waitUntil: 'networkidle0',
+                    timeout: 30000
+                })
+            }catch{
+                continue;
+            }
 
             try {
                 await page.waitForSelector('#side', { timeout: 60000 })

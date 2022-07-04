@@ -18,7 +18,7 @@ async function run({ keyWords, cities }, task) {
 
     resetData()
 
-    const browser = await puppeteer.launch({ "headless": false });
+    const browser = await puppeteer.launch({ "headless": true });
     task.setStatus(task.states.RUNNING)
     task.log('Comenzando obtención de datos...')
 
