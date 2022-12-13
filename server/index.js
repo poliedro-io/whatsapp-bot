@@ -3,13 +3,12 @@ const { Server } = require('ws');
 const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
-// const INDEX = '/index.html';
 
-
-const server = express().get('/download', function (req, res) {
-  const file = `data/data.xlsx`
-  res.download(file)
-}).use(express.static('dist'))
+const server = express()
+  // .get('/download', function (req, res) {
+  //   const file = `data/data.xlsx`
+  //   res.download(file)
+  // }).use(express.static('dist'))
   .listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
 
 const wss = new Server({ server });
@@ -30,7 +29,7 @@ function handleMessage(socket, payload) {
     const task = new Task(method, params, socket)
     task.run()
   }
-  if(payloadObject['cleanLogs']){
+  if (payloadObject['cleanLogs']) {
     cleanLogs()
   }
 }
@@ -77,9 +76,9 @@ class Task {
   }
 }
 
-function cleanLogs(){
+function cleanLogs() {
   fs.unlink('data/logs.json', err => {
-    if(err){
+    if (err) {
       console.error(err);
       return
     }

@@ -68,20 +68,6 @@
         </b-overlay>
       </div>
     </div>
-
-    <!-- <div v-else class="d-flex align-items-center justify-content-between">
-      <b-form-input
-        id="input-1"
-        v-model="pwd"
-        type="password"
-        placeholder="Contraseña"
-        v-on:keyup.enter="verify"
-        required
-      ></b-form-input>
-      <b-button variant="dark" @click="verify" style="margin-left: 0.5rem"
-        >Desbloquear</b-button
-      >
-    </div> -->
   </div>
 </template>
 
@@ -130,7 +116,7 @@ export default {
     //   this.moduleName = null;
     // },
     sendMessage(payload) {
-      console.log(payload)
+      console.log(payload);
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
 
@@ -142,8 +128,10 @@ export default {
       this.ws.onclose = () => (this.task = null);
     },
     cleanLogs() {
-        this.ws = new WebSocket(this.host);
-        this.ws.onopen = () => {this.ws.send(JSON.stringify({cleanLogs: true}))}
+      this.ws = new WebSocket(this.host);
+      this.ws.onopen = () => {
+        this.ws.send(JSON.stringify({ cleanLogs: true }));
+      };
     },
     getData(payload) {
       console.log(payload);

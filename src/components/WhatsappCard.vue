@@ -20,11 +20,11 @@
               Adjuntar imagen
             </label>
           </div>
-            <small v-if="attachImage" class="form-text text-muted"
-              >Copia la imagen que quieres enviar a la carpeta 'data' y cámbiale
-              el nombre a 'imagen.png' (la imagen debe estar en formato
-              png).</small
-            >
+          <small v-if="attachImage" class="form-text text-muted"
+            >Copia la imagen que quieres enviar a la carpeta 'data' y cámbiale
+            el nombre a 'imagen.png' (la imagen debe estar en formato
+            png).</small
+          >
         </div>
         <div class="col-4">
           <label class="d-flex justify-content-between">
@@ -69,7 +69,7 @@ export default {
   data() {
     return {
       message: "*mensaje de prueba*",
-      recipientsStr: "971524620\n971906867\n996667538",
+      recipientsStr: "971524620\n996667538",
       attachImage: false,
     };
   },

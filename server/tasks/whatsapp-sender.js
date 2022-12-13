@@ -62,7 +62,7 @@ async function run({ message, recipients, attachImage }, task) {
 
         await page.waitForSelector('#side', {
             visible: true,
-            timeout: 30000
+            timeout: 120000
         })
 
         task.setStatus(task.states.RUNNING)
@@ -85,12 +85,12 @@ async function run({ message, recipients, attachImage }, task) {
                 throw Error('Abortado')
 
             const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
-            try{
+            try {
                 await page.goto(url, {
                     waitUntil: 'networkidle0',
                     timeout: 30000
                 })
-            }catch{
+            } catch {
                 continue;
             }
 
@@ -149,7 +149,6 @@ async function run({ message, recipients, attachImage }, task) {
                     await page.waitForTimeout(300);
                 }
 
-
                 await page.waitForFunction(
                     () => {
                         const icons = document.querySelectorAll(".do8e0lj9>span");
@@ -161,7 +160,7 @@ async function run({ message, recipients, attachImage }, task) {
                         }
                         return false
                     }
-                    , { timeout: 20000 }
+                    , { timeout: 10000 }
                 );
 
                 task.setProgress((index + 1) / recipients.length)
