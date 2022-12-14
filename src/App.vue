@@ -98,9 +98,10 @@ export default {
       return this.task != null;
     },
     host() {
-      return process.env.NODE_ENV === "development"
-        ? "ws://localhost:3000"
-        : location.origin.replace(/^http/, "ws");
+      return "ws://localhost:3000";
+      // return process.env.NODE_ENV === "development"
+      //   ? "ws://localhost:3000"
+      //   : location.origin.replace(/^http/, "ws");
     },
   },
   methods: {
@@ -116,7 +117,6 @@ export default {
     //   this.moduleName = null;
     // },
     sendMessage(payload) {
-      console.log(payload);
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
 

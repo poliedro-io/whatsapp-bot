@@ -5,10 +5,6 @@ const fs = require('fs');
 const PORT = process.env.PORT || 3000;
 
 const server = express()
-  // .get('/download', function (req, res) {
-  //   const file = `data/data.xlsx`
-  //   res.download(file)
-  // }).use(express.static('dist'))
   .listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
 
 const wss = new Server({ server });

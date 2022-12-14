@@ -88,14 +88,14 @@ async function run({ message, recipients, attachImage }, task) {
             try {
                 await page.goto(url, {
                     waitUntil: 'networkidle0',
-                    timeout: 30000
+                    timeout: 10000
                 })
             } catch {
                 continue;
             }
 
             try {
-                await page.waitForSelector('#side', { timeout: 60000 })
+                await page.waitForSelector('#side', { timeout: 30000 })
             } catch (err) {
                 console.log('Error: no cargó la página')
                 continue
@@ -120,7 +120,6 @@ async function run({ message, recipients, attachImage }, task) {
             try {
 
                 // ADJUNTAR IMAGEN
-
                 if (attachImage) {
                     const clipButton = '._26lC3[aria-label="Adjuntar"] span[data-testid="clip"]'
                     await page.waitForSelector(clipButton, { timeout: 10000 });
@@ -146,7 +145,7 @@ async function run({ message, recipients, attachImage }, task) {
                     const sendButton = '._3HQNh._1Ae7k button'
                     await page.waitForSelector(sendButton, { timeout: 5000 })
                     await page.click(sendButton)
-                    await page.waitForTimeout(300);
+                    await page.waitForTimeout(500);
                 }
 
                 await page.waitForFunction(

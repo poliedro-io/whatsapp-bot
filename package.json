@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "npm run build",
-    "start": "node server",
+    "start": "node server & lite-server -c ./ls-config.json",
     "dev:ui": "vue-cli-service serve",
     "dev:server": "nodemon --ignore 'data' server",
     "build": "vue-cli-service build",
