@@ -14,14 +14,17 @@ async function run({ message, recipients, attachImage }, task) {
     browser = await puppeteer.launch({
         headless: false,
         args: [
-            '--no-sandbox',
+            '--start-maximized',
+            '--disable-gpu',
+            '--disable-dev-shm-usage',
             '--disable-setuid-sandbox',
-            '--start-fullscreen'
-        ]
+            '--no-first-run',
+            '--no-sandbox',
+            '--no-zygote',
+        ],
+        defaultViewport: null
     });
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3641.0 Safari/537.36');
-    // await page.setViewport({ width: 1024, height: 768});
 
     page.on('dialog', async dialog => {
         console.log(dialog.message());
@@ -29,20 +32,16 @@ async function run({ message, recipients, attachImage }, task) {
     });
 
     try {
-        await page.goto('https://web.whatsapp.com', {
-            waitUntil: 'networkidle0',
-            timeout: 120000,
-        })
+        await page.goto('https://web.whatsapp.com')
 
         // ESPERAR HASTA QUE APAREZCA EL CODIGO (a veces se apuraba y tomaba un token null)
-        await page.waitForSelector('.b77wc', {
-            visible: true,
-            timeout: 120000
-        })
+        const qr = 'div[data-testid="qrcode"]'
+        await page.waitForSelector(qr)
+        console.log('QR visible');
 
         // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
-        const qr_code = await page.$eval('._2UwZ_', el => el ? el.getAttribute('data-ref') : '')
-        task.log(`TOKEN ${qr_code}`)
+        const qrCode = await page.$eval(qr, el => el ? el.getAttribute('data-ref') : '')
+        task.log(`TOKEN ${qrCode}`)
 
         // CODIGO QR
 
@@ -58,12 +57,8 @@ async function run({ message, recipients, attachImage }, task) {
         //     quality: 100
         // })
 
-        task.log(`TOKEN ${qr_code}`)
-
-        await page.waitForSelector('#side', {
-            visible: true,
-            timeout: 120000
-        })
+        // task.log(`TOKEN ${qrCode}`)
+        await page.waitForSelector('#side')
 
         task.setStatus(task.states.RUNNING)
         task.log('Comenzando envío...')
@@ -78,7 +73,8 @@ async function run({ message, recipients, attachImage }, task) {
             if (hasSent(number)) {
                 task.setProgress((index + 1) / recipients.length)
                 task.log(`[${index + 1}/${recipients.length}] Número repetido: ${number}`)
-                continue
+                return null
+                // continue
             }
 
             if (task.socket.readyState != 1)
@@ -87,41 +83,29 @@ async function run({ message, recipients, attachImage }, task) {
             const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(message)}`
             try {
                 await page.goto(url, {
-                    waitUntil: 'networkidle0',
-                    timeout: 10000
+                    waitUntil: 'domcontentloaded',
                 })
-            } catch {
-                continue;
-            }
+                await page.waitForSelector('#side')
 
-            try {
-                await page.waitForSelector('#side', { timeout: 30000 })
-            } catch (err) {
-                console.log('Error: no cargó la página')
-                continue
-            }
+                let isInvalidNumber
+                try {
+                    await page.waitForSelector('._3J6wB', { timeout: 2000 })
+                    const text = await page.$eval('._2Nr6U', (el) => el ? el.textContent : '')
+                    isInvalidNumber = text.includes('inválido')
+                } catch (e) {
+                    isInvalidNumber = false
+                }
 
-            let isInvalidNumber
-            try {
-                await page.waitForSelector('._3J6wB', { timeout: 2000 })
-                const text = await page.$eval('._2Nr6U', (el) => el ? el.textContent : '')
-                isInvalidNumber = text.includes('inválido')
-            } catch {
-                isInvalidNumber = false
-            }
-
-            if (isInvalidNumber) {
-                task.setProgress((index + 1) / recipients.length)
-                task.log(`[${index + 1}/${recipients.length}] Número inválido: ${number}`)
-                updateData(number, 'Inválido')
-                continue
-            }
-
-            try {
+                if (isInvalidNumber) {
+                    task.setProgress((index + 1) / recipients.length)
+                    task.log(`[${index + 1}/${recipients.length}] Número inválido: ${number}`)
+                    updateData(number, 'Inválido')
+                    return null
+                }
 
                 // ADJUNTAR IMAGEN
                 if (attachImage) {
-                    const clipButton = '._26lC3[aria-label="Adjuntar"] span[data-testid="clip"]'
+                    const clipButton = 'div[aria-label="Adjuntar"] span[data-testid="clip"]'
                     await page.waitForSelector(clipButton, { timeout: 10000 });
                     await page.waitForTimeout(1000);
                     await page.click(clipButton);
@@ -142,15 +126,16 @@ async function run({ message, recipients, attachImage }, task) {
                 }
 
                 else {
-                    const sendButton = '._3HQNh._1Ae7k button'
+                    const sendButton = 'button[aria-label="Enviar"]'
                     await page.waitForSelector(sendButton, { timeout: 5000 })
                     await page.click(sendButton)
                     await page.waitForTimeout(500);
                 }
+                console.log('Mensaje enviado');
 
                 await page.waitForFunction(
                     () => {
-                        const icons = document.querySelectorAll(".do8e0lj9>span");
+                        const icons = document.querySelectorAll('div[data-testid="msg-meta"] span[data-testid^="msg-"]');
                         if (!icons)
                             return false
                         const currLength = icons.length
@@ -170,8 +155,6 @@ async function run({ message, recipients, attachImage }, task) {
                 task.log(err);
                 continue
             }
-
-
         }
 
     }
