@@ -21,7 +21,6 @@
             tag-removed-label="elemento eliminado"
             add-button-text="Agregar"
             remove-on-delete
-
           ></b-form-tags>
         </div>
         <div class="col-12">
@@ -42,7 +41,7 @@
           <div v-if="!toAll">
             <b-form-group>
               <b-form-radio-group
-               class="d-flex"
+                class="d-flex"
                 id="radio-group"
                 v-model="selectByRegion"
                 v-on:change="setRegionsOrCities"
@@ -61,7 +60,6 @@
               :select-size="5"
             ></b-form-select>
           </div>
-         
         </div>
       </div>
     </div>
@@ -70,7 +68,7 @@
       <button
         :disabled="!selectedLength || !keyWordsArray.length"
         class="btn btn-success"
-        @click="showConfirmDialog"
+        @click="getData"
       >
         Obtener datos
       </button>
@@ -89,13 +87,15 @@ export default {
       selected: [],
       toAll: false,
       selectByRegion: true,
-      regions: regions.sort((a, b) => a.id - b.id).map((r) => 
-      ({text: r.name,
-        value: r.provincias.reduce(
-                (acc, p) => acc.concat(p.comunas.map((c) => c.name)),
-                []
-              )
-      })),
+      regions: regions
+        .sort((a, b) => a.id - b.id)
+        .map((r) => ({
+          text: r.name,
+          value: r.provincias.reduce(
+            (acc, p) => acc.concat(p.comunas.map((c) => c.name)),
+            []
+          ),
+        })),
       cities: regions
         .reduce(
           (acc, r) =>
@@ -108,13 +108,15 @@ export default {
           []
         )
         .sort(),
-      items: regions.sort((a, b) => a.id - b.id).map((r) => 
-      ({text: r.name,
-        value: r.provincias.reduce(
-                (acc, p) => acc.concat(p.comunas.map((c) => c.name)),
-                []
-              )
-      })),
+      items: regions
+        .sort((a, b) => a.id - b.id)
+        .map((r) => ({
+          text: r.name,
+          value: r.provincias.reduce(
+            (acc, p) => acc.concat(p.comunas.map((c) => c.name)),
+            []
+          ),
+        })),
     };
   },
   computed: {
@@ -125,53 +127,23 @@ export default {
       return location.origin;
     },
     selectedLength: function() {
-      return this.selected.reduce((acc, el)=> acc.concat(el),[]).length
-    }
+      return this.selected.reduce((acc, el) => acc.concat(el), []).length;
+    },
   },
   methods: {
-  
     setAll() {
       this.selected = this.toAll ? this.cities : [];
     },
     setRegionsOrCities() {
       this.items = this.selectByRegion ? this.regions : this.cities;
     },
-    showConfirmDialog() {
-      this.$bvModal
-        .msgBoxConfirm(
-          `¿Estás seguro que quieres obtener datos de ${
-            this.selectedLength > 1
-              ? `${this.selectedLength} ciudades`
-              : "esta ciudad"
-          }?`,
-          {
-            title: "Confirmación",
-            size: "md",
-            buttonSize: "sm",
-            okVariant: "success",
-            okTitle: "Sí, segurísimo",
-            cancelTitle: "No, lo voy a pensar mejor",
-            cancelVariant: "outline-secondary",
-            footerClass: "p-2",
-            hideHeaderClose: true,
-            centered: true,
-          }
-        )
-        .then((value) => {
-          value ? this.getData() : false;
-        })
-        .catch((err) => {
-          console.log(err.message);
-          // An error occurred
-        });
-    },
     getData() {
       let payload = {
         keyWords: this.keyWordsArray,
-        cities: this.selected.reduce((acc, el)=> acc.concat(el),[])
+        cities: this.selected.reduce((acc, el) => acc.concat(el), []),
       };
       this.$emit("getData", payload);
-    }
+    },
   },
 };
 </script>
@@ -192,21 +164,20 @@ label {
   font-size: 24px;
 }
 
-.badge{
+.badge {
   background-color: gray;
-  button{
+  button {
     border: none;
     background-color: gray;
   }
 }
 
-div[role="radiogroup"]{
-  .custom-control{
+div[role="radiogroup"] {
+  .custom-control {
     margin-right: 1rem;
-    input[type="radio"]{
+    input[type="radio"] {
       margin-right: 0.2rem;
     }
   }
 }
-
 </style>

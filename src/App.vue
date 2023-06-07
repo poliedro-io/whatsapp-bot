@@ -12,18 +12,6 @@
             <h4 class="mt-3">Enviar mensaje</h4>
           </div>
         </div>
-
-        <!-- <div class="d-flex justify-content-center mt-5">
-          <b-button
-            variant="outline-dark"
-            size="sm"
-            class="border-0 mb-2"
-            @click="logout"
-            :disabled="bussy"
-          >
-            Cerrar sesión
-          </b-button>
-        </div> -->
       </div>
 
       <div v-else>
@@ -99,9 +87,6 @@ export default {
     },
     host() {
       return "ws://localhost:3000";
-      // return process.env.NODE_ENV === "development"
-      //   ? "ws://localhost:3000"
-      //   : location.origin.replace(/^http/, "ws");
     },
   },
   methods: {
@@ -112,10 +97,6 @@ export default {
     close() {
       this.moduleName = null;
     },
-    // logout() {
-    //   this.authorized = false;
-    //   this.moduleName = null;
-    // },
     sendMessage(payload) {
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
@@ -134,8 +115,6 @@ export default {
       };
     },
     getData(payload) {
-      console.log(payload);
-
       this.ws = new WebSocket(this.host);
       this.ws.onmessage = (message) => this.handleMessage(message);
 

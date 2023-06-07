@@ -32,26 +32,22 @@
 
     <div class="mt-3 d-flex justify-content-end">
       <div v-if="completed">
-        <b-button
-          class="me-2"
-          size="sm"
-          variant="outline-success"
-          @click="clean"
+        <b-button class="me-2" variant="outline-success" @click="clean"
           >Cerrar
         </b-button>
 
-        <a :href="downloadLink" download class="btn btn-sm btn-success">
+        <b-button @click="downloadFile" variant="success">
           Descargar archivo
-        </a>
+        </b-button>
       </div>
       <div v-else>
-        <b-button
+        <b-buttondownloadFile
           variant="link"
           size="sm"
           class="text-decoration-none text-danger"
           @click="cancel"
           >Cancelar proceso
-        </b-button>
+        </b-buttondownloadFile>
       </div>
     </div>
   </div>
@@ -78,13 +74,8 @@ export default {
     value() {
       return this.task.progress * 100;
     },
-    downloadLink() {
-      return "http://localhost:3000/download";
-    },
   },
   methods: {
-    downloadFile() {},
-
     cancel() {
       this.$bvModal
         .msgBoxConfirm(`¿Seguro que quieres interrumpir la operación?`, {
@@ -109,6 +100,11 @@ export default {
     },
     clean() {
       this.$emit("clean");
+    },
+    downloadFile() {
+      const a = document.createElement("a");
+      a.href = "http://localhost:3000/scraped-data.xlsx";
+      a.click();
     },
   },
 };
