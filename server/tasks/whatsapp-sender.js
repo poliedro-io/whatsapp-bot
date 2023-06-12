@@ -1,10 +1,11 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const { uniq } = require("lodash");
 
 let browser;
 
-async function run({ message, recipients, attachImage }, task) {
-  if (!message || !recipients || !recipients.length) return "";
+async function run({ message, recipients: _recipients, attachImage }, task) {
+  if (!message || !_recipients || !_recipients.length) return "";
 
   task.log("Comenzando.");
   task.log(attachImage);
@@ -25,7 +26,6 @@ async function run({ message, recipients, attachImage }, task) {
   const page = await browser.newPage();
 
   page.on("dialog", async (dialog) => {
-    console.log(dialog.message());
     await dialog.accept();
   });
 
@@ -34,13 +34,24 @@ async function run({ message, recipients, attachImage }, task) {
 
     const qr = 'div[data-testid="qrcode"]';
     await page.waitForSelector(qr);
-    console.log("QR visible");
 
-    // el componente vue-qr dibujaba otro patrón y desde algunos celulares no funcionaba la lectura. Se optó por screenshotear el navegador y pasar la imagen directo a la app.
-    const qrCode = await page.$eval(qr, (el) =>
-      el ? el.getAttribute("data-ref") : ""
-    );
-    task.log(`TOKEN ${qrCode}`);
+    let isAuthorized = false;
+    let token = "";
+    while (!isAuthorized) {
+      try {
+        await page.waitForSelector(qr, { timeout: 1000 });
+        const newToken = await page.$eval(qr, (el) =>
+          el ? el.getAttribute("data-ref") : ""
+        );
+        if (newToken !== token) {
+          token = newToken;
+          task.log(`TOKEN ${token}`);
+        }
+        await page.waitForTimeout(500);
+      } catch (e) {
+        isAuthorized = true;
+      }
+    }
 
     // CODIGO QR
 
@@ -58,27 +69,14 @@ async function run({ message, recipients, attachImage }, task) {
 
     // task.log(`TOKEN ${qrCode}`)
     await page.waitForSelector("#side", {
-      timeout: 60000,
+      timeout: 120000,
     });
 
     task.setStatus(task.states.RUNNING);
     task.log("Comenzando envío...");
+    const recipients = removeRepeatedNumbers(_recipients);
 
     for (let [index, number] of recipients.entries()) {
-      if (!number) {
-        task.setProgress((index + 1) / recipients.length);
-        task.log(`[${index + 1}/${recipients.length}] Número inválido`);
-        continue;
-      }
-
-      if (hasSent(number)) {
-        task.setProgress((index + 1) / recipients.length);
-        task.log(
-          `[${index + 1}/${recipients.length}] Número repetido: ${number}`
-        );
-        continue;
-      }
-
       if (task.socket.readyState != 1) throw Error("Abortado");
 
       const url = `https://web.whatsapp.com/send?phone=${number}&text=${encodeURI(
@@ -90,16 +88,20 @@ async function run({ message, recipients, attachImage }, task) {
         });
         await page.waitForSelector("#side");
 
-        let isInvalidNumber;
+        let isInvalidNumber = false;
         try {
-          await page.waitForSelector("._3J6wB", { timeout: 2000 });
-          const text = await page.$eval(
-            "div[data-testid='popup-contents']",
-            (el) => (el ? el.textContent : "")
-          );
-          isInvalidNumber = text.includes("inválido");
+          await page.waitForSelector("div[data-testid='compose-box']", {
+            timeout: 2000,
+          });
         } catch (e) {
-          isInvalidNumber = false;
+          await page
+            .$eval(
+              "div[data-testid='popup-contents']",
+              (el) => (el ? el.textContent : ""),
+              { timeout: 3000 }
+            )
+            .then((text) => (isInvalidNumber = text.includes("inválido")))
+            .catch();
         }
 
         if (isInvalidNumber) {
@@ -107,21 +109,28 @@ async function run({ message, recipients, attachImage }, task) {
           task.log(
             `[${index + 1}/${recipients.length}] Número inválido: ${number}`
           );
-          updateData(number, "Inválido");
+          updateData(number, "invalid");
           continue;
         }
 
         // ADJUNTAR IMAGEN
         if (attachImage) {
+          console.log("en el if");
           const clipButton =
             'div[aria-label="Adjuntar"] span[data-testid="clip"]';
-          await page.waitForSelector(clipButton, { timeout: 10000 });
+          await page.waitForSelector(clipButton, { timeout: 5000 });
           await page.waitForTimeout(1000);
-          await page.click(clipButton);
-          await page.waitForTimeout(1000);
-
           const imageButton = 'button[aria-label="Fotos y videos"]';
-          await page.waitForSelector(imageButton, { timeout: 5000 });
+          for (let i = 0; i < 3; i++) {
+            try {
+              await page.click(clipButton);
+              await page.waitForTimeout(1000);
+              await page.waitForSelector(imageButton, { timeout: 2000 });
+              break;
+            } catch (e) {
+              continue;
+            }
+          }
 
           const [fileChooser] = await Promise.all([
             page.waitForFileChooser(),
@@ -134,11 +143,17 @@ async function run({ message, recipients, attachImage }, task) {
           await page.waitForTimeout(1000);
         } else {
           const sendButton = 'button[aria-label="Enviar"]';
-          await page.waitForSelector(sendButton, { timeout: 5000 });
-          await page.click(sendButton);
-          await page.waitForTimeout(500);
+          for (let i = 0; i < 3; i++) {
+            try {
+              console.log("intento N°", i + 1);
+              await page.waitForSelector(sendButton, { timeout: 2000 });
+              await page.click(sendButton);
+              await page.waitForTimeout(1000);
+            } catch (e) {
+              break;
+            }
+          }
         }
-        console.log("Mensaje enviado");
 
         await page.waitForFunction(
           () => {
@@ -154,7 +169,7 @@ async function run({ message, recipients, attachImage }, task) {
             }
             return false;
           },
-          { timeout: 10000 }
+          { timeout: 5000 }
         );
 
         task.setProgress((index + 1) / recipients.length);
@@ -189,12 +204,13 @@ function updateData(number, error) {
   }
 }
 
-function hasSent(number) {
+function removeRepeatedNumbers(numbers) {
   try {
     const data = JSON.parse(fs.readFileSync("data/logs.json", "utf-8"));
-    return !!data[number];
+    const filtered = uniq(numbers.filter((number) => !number || !data[number]));
+    return filtered;
   } catch {
-    return false;
+    return numbers;
   }
 }
 

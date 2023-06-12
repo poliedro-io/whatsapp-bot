@@ -79,10 +79,5 @@ class Task {
 }
 
 function cleanLogs() {
-  fs.unlink("data/logs.json", (err) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-  });
+  fs.writeFileSync("data/logs.json", JSON.stringify({}), "utf-8");
 }
