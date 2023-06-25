@@ -115,23 +115,21 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
 
         // ADJUNTAR IMAGEN
         if (attachImage) {
-          console.log("en el if");
-          const clipButton =
-            'div[aria-label="Adjuntar"] span[data-testid="clip"]';
+          const clipButton = 'div[title="Adjuntar"]';
           await page.waitForSelector(clipButton, { timeout: 5000 });
-          await page.waitForTimeout(1000);
-          const imageButton = 'button[aria-label="Fotos y videos"]';
-          for (let i = 0; i < 3; i++) {
+          const imageButton = 'li[data-testid="mi-attach-media"]';
+
+          for (let i = 0; i < 5; i++) {
             try {
               await page.click(clipButton);
-              await page.waitForTimeout(1000);
+              await page.waitForTimeout(500);
               await page.waitForSelector(imageButton, { timeout: 2000 });
+              await page.waitForTimeout(500);
               break;
             } catch (e) {
               continue;
             }
           }
-
           const [fileChooser] = await Promise.all([
             page.waitForFileChooser(),
             page.click(imageButton),
@@ -143,12 +141,12 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
           await page.waitForTimeout(1000);
         } else {
           const sendButton = 'button[aria-label="Enviar"]';
-          for (let i = 0; i < 3; i++) {
+          for (let i = 0; i < 5; i++) {
             try {
               console.log("intento N°", i + 1);
               await page.waitForSelector(sendButton, { timeout: 2000 });
               await page.click(sendButton);
-              await page.waitForTimeout(1000);
+              await page.waitForTimeout(500);
             } catch (e) {
               break;
             }
