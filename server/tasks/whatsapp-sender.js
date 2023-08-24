@@ -32,7 +32,7 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
   try {
     await page.goto("https://web.whatsapp.com");
 
-    const qr = 'div[data-testid="qrcode"]';
+    const qr = "div._19vUU";
     await page.waitForSelector(qr);
 
     let isAuthorized = false;
@@ -53,21 +53,6 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
       }
     }
 
-    // CODIGO QR
-
-    // const qr_base64 = await page.screenshot({
-    //     clip: {
-    //         x: canvasPosition.left,
-    //         y: canvasPosition.top,
-    //         width: 264,
-    //         height: 264
-    //     },
-    //     type: 'jpeg',
-    //     encoding: 'base64',
-    //     quality: 100
-    // })
-
-    // task.log(`TOKEN ${qrCode}`)
     await page.waitForSelector("#side", {
       timeout: 120000,
     });
@@ -89,19 +74,19 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
         await page.waitForSelector("#side");
 
         let isInvalidNumber = false;
+        const main = "div[id='main']";
+        const dialog = "div[role='dialog']";
         try {
-          await page.waitForSelector("div[data-testid='compose-box']", {
-            timeout: 2000,
+          await page.waitForSelector(main, {
+            timeout: 3000,
           });
         } catch (e) {
           await page
-            .$eval(
-              "div[data-testid='popup-contents']",
-              (el) => (el ? el.textContent : ""),
-              { timeout: 3000 }
-            )
-            .then((text) => (isInvalidNumber = text.includes("inválido")))
-            .catch();
+            .waitForSelector(dialog, {
+              timeout: 3000,
+              hidden: true,
+            })
+            .catch(() => (isInvalidNumber = true));
         }
 
         if (isInvalidNumber) {
@@ -117,7 +102,7 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
         if (attachImage) {
           const clipButton = 'div[title="Adjuntar"]';
           await page.waitForSelector(clipButton, { timeout: 5000 });
-          const imageButton = 'li[data-testid="mi-attach-media"]';
+          const imageButton = "ul._3bcLp li";
 
           for (let i = 0; i < 5; i++) {
             try {
@@ -132,7 +117,7 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
           }
           const [fileChooser] = await Promise.all([
             page.waitForFileChooser(),
-            page.click(imageButton),
+            await page.$$(imageButton).then((els) => els[1].click()),
           ]);
           await fileChooser.accept(["data/imagen.png"]);
           await page.waitForSelector(".konvajs-content");
@@ -156,7 +141,7 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
         await page.waitForFunction(
           () => {
             const icons = document.querySelectorAll(
-              'div[data-testid="msg-meta"] span[data-testid^="msg-"]'
+              'div.do8e0lj9 span[data-icon^="msg-"]'
             );
             if (!icons) return false;
             const currLength = icons.length;
