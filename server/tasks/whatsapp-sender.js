@@ -78,12 +78,12 @@ async function run({ message, recipients: _recipients, attachImage }, task) {
         const dialog = "div[role='dialog']";
         try {
           await page.waitForSelector(main, {
-            timeout: 3000,
+            timeout: 5000,
           });
         } catch (e) {
           await page
             .waitForSelector(dialog, {
-              timeout: 3000,
+              timeout: 5000,
               hidden: true,
             })
             .catch(() => (isInvalidNumber = true));
@@ -190,10 +190,10 @@ function updateData(number, error) {
 function removeRepeatedNumbers(numbers) {
   try {
     const data = JSON.parse(fs.readFileSync("data/logs.json", "utf-8"));
-    const filtered = uniq(numbers.filter((number) => !number || !data[number]));
+    const filtered = uniq(numbers.filter((number) => !data[number]));
     return filtered;
   } catch {
-    return numbers;
+    return numbers.map((n) => n.trim().replace("+", ""));
   }
 }
 
