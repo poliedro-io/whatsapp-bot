@@ -1,30 +1,31 @@
 <template>
-  <div class="card content shadow">
-    <div class="card-header">
-      <h4><b-icon-chat-dots></b-icon-chat-dots> Whatsapp Bot</h4>
-    </div>
-    <div class="card-content p-3">
+  <div class="whatsapp-form">
+    <div>
       <div class="row">
         <div class="col-8">
           <label>Mensaje</label>
-          <textarea class="form-control" rows="15" v-model="message"></textarea>
+          <textarea class="form-control" rows="11" v-model="message"></textarea>
 
-          <div class="mt-2 form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="defaultCheck1"
-              v-model="attachImage"
-            />
-            <label class="form-check-label" for="defaultCheck1">
-              Adjuntar imagen
+          <div class="mt-2">
+            <label v-if="!imagePreview" class="image-upload-area">
+              <i class="bi bi-image"></i>
+              <span>Adjuntar imagen</span>
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="onFileSelected"
+              />
             </label>
+            <div v-else class="image-preview">
+              <img :src="imagePreview" alt="Preview" />
+              <button class="btn-remove" @click="removeImage" title="Quitar imagen">
+                <i class="bi bi-x-lg"></i>
+              </button>
+              <span class="image-name">{{ imageName }}</span>
+            </div>
           </div>
-          <small v-if="attachImage" class="form-text text-muted"
-            >Copia la imagen que quieres enviar a la carpeta 'data' y cámbiale
-            el nombre a 'imagen.png' (la imagen debe estar en formato
-            png).</small
-          >
         </div>
         <div class="col-4">
           <label class="d-flex justify-content-between">
@@ -45,7 +46,7 @@
         </div>
       </div>
     </div>
-    <div class="card-footer d-flex justify-content-between">
+    <div class="d-flex justify-content-between mt-3">
       <div>{{ recipientsArr.length }} destinatarios</div>
       <div>
         <button class="btn btn-secondary" @click="cleanLogs">
@@ -53,8 +54,7 @@
         </button>
         <button
           :disabled="!recipientsArr.length || message == ''"
-          class="btn btn-success"
-          style="margin-left: .5rem"
+          class="btn btn-success ms-2"
           @click="sendMessage"
         >
           Enviar mensaje
@@ -66,64 +66,68 @@
 
 <script>
 export default {
+  emits: ['sendMessage', 'cleanLogs'],
   data() {
     return {
       message: "*mensaje de prueba*",
       recipientsStr: "971524620\n996667538",
-      attachImage: false,
+      imageFile: null,
+      imagePreview: null,
+      imageName: "",
     };
   },
   computed: {
-    recipientsArr: function() {
+    recipientsArr() {
       return this.recipientsStr.split("\n").filter((s) => s != "");
-    },
-    host: function() {
-      return location.origin;
     },
   },
   methods: {
-    showConfirmDialog() {
-      this.$bvModal
-        .msgBoxConfirm(
-          `¿Estás seguro que quieres enviar este mensaje a ${
-            this.recipientsArr.length > 1
-              ? `los ${this.recipientsArr.length} destinatarios`
-              : "este destinatario"
-          }?`,
-          {
-            title: "Confirmación",
-            size: "md",
-            buttonSize: "sm",
-            okVariant: "success",
-            okTitle: "Sí, segurísimo",
-            cancelTitle: "No, lo voy a pensar mejor",
-            cancelVariant: "outline-secondary",
-            footerClass: "p-2",
-            hideHeaderClose: true,
-            centered: true,
-          }
-        )
-        .then((value) => {
-          value ? this.sendMessage() : false;
-        })
-        .catch((err) => {
-          console.log(err.message);
-          // An error occurred
-        });
+    onFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.imageFile = file;
+      this.imageName = file.name;
+      this.imagePreview = URL.createObjectURL(file);
     },
-    sendMessage() {
+    removeImage() {
+      this.imageFile = null;
+      this.imagePreview = null;
+      this.imageName = "";
+      this.$refs.fileInput.value = "";
+      // Tell server to remove the image
+      fetch("http://localhost:3000/upload-image", { method: "DELETE" });
+    },
+    async uploadImage() {
+      if (!this.imageFile) return false;
+      const ext = this.imageFile.name.split(".").pop();
+      const res = await fetch("http://localhost:3000/upload-image", {
+        method: "POST",
+        headers: { "x-file-ext": ext },
+        body: this.imageFile,
+      });
+      const data = await res.json();
+      return data.ok ? data.path : false;
+    },
+    async sendMessage() {
+      let imagePath = null;
+      if (this.imageFile) {
+        imagePath = await this.uploadImage();
+        if (!imagePath) {
+          alert("Error al subir la imagen");
+          return;
+        }
+      }
       let payload = {
         message: this.message,
         recipients: this.formatNumbers(this.recipientsArr),
-        attachImage: this.attachImage,
+        attachImage: !!imagePath,
+        imagePath,
       };
       this.$emit("sendMessage", payload);
     },
     cleanLogs() {
-      console.log("Limpiando registros...");
       this.$emit("cleanLogs");
     },
-
     formatNumbers(array) {
       return array.map((el) => {
         var number = el.replace(/[^\d]/g, "");
@@ -142,10 +146,9 @@ export default {
 };
 </script>
 
-<style>
-.content {
-  width: 800px;
-  max-width: 95vw;
+<style scoped>
+.whatsapp-form {
+  width: 100%;
 }
 .clean {
   cursor: pointer;
@@ -154,11 +157,70 @@ export default {
 label {
   color: #616161;
 }
-.resume {
-  font-size: 24px;
-}
 textarea {
   resize: none !important;
   border-color: #b6b6b6 !important;
+}
+
+.image-upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  color: #888;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.image-upload-area:hover {
+  border-color: #25d366;
+  color: #25d366;
+}
+.image-upload-area i {
+  font-size: 1.2rem;
+}
+
+.image-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.image-preview img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.image-preview .image-name {
+  font-size: 13px;
+  color: #555;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.image-preview .btn-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: #dc3545;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
 }
 </style>

@@ -1,8 +1,9 @@
-const puppeteer = require("puppeteer");
-const xlsx = require("xlsx");
-const fs = require("fs");
-const { flatten, chunk } = require("lodash");
-const url = "https://www.google.cl/maps/";
+import puppeteer from "puppeteer";
+import xlsx from "xlsx";
+import fs from "fs";
+import { flatten, chunk } from "lodash-es";
+
+const mapUrl = "https://www.google.cl/maps/";
 const countries = JSON.parse(
   fs.readFileSync("src/assets/countries.json", "utf-8")
 );
@@ -12,7 +13,7 @@ let task;
 let browser;
 const RESULTS_SELECTOR = `div[role="feed"]`;
 
-async function run({ keyWords, cities }, _task) {
+export async function run({ keyWords, cities }, _task) {
   task = _task;
   count = 0;
   resetData();
@@ -37,7 +38,7 @@ async function run({ keyWords, cities }, _task) {
   });
 
   task.setStatus(task.states.RUNNING);
-  task.log("Comenzando obtención de datos...");
+  task.log("Comenzando obtencion de datos...");
 
   for (let [i, term] of searchTerms.entries()) {
     await runByTerm(term, task);
@@ -53,15 +54,11 @@ async function run({ keyWords, cities }, _task) {
   return "Completado!";
 }
 
-module.exports = {
-  run,
-};
-
 async function runByTerm(term) {
   try {
     console.log("Buscando: ", term);
     const page = await browser.newPage();
-    await page.goto(url);
+    await page.goto(mapUrl);
     await page.waitForSelector("#searchboxinput");
     await page.type("#searchboxinput", term);
     await page.click("#searchbox-searchbutton");
@@ -118,7 +115,7 @@ async function getPageLinks(page) {
     links = await page.$$eval(".hfpxzc", (cards) =>
       cards.map((el) => el.getAttribute("href"))
     );
-    await page.waitForTimeout(500);
+    await new Promise((r) => setTimeout(r, 500));
   }
 
   return links;
@@ -149,7 +146,7 @@ async function scrapeSinglePages(links, term) {
         }
         try {
           telefono = await page.$eval(
-            'button[aria-label*="Teléfono"] .Io6YTe',
+            'button[aria-label*="Telefono"] .Io6YTe',
             (el) => el.textContent
           );
         } catch {
@@ -157,7 +154,7 @@ async function scrapeSinglePages(links, term) {
         }
         try {
           direccion = await page.$eval(
-            'button[aria-label*="Dirección"] .Io6YTe',
+            'button[aria-label*="Direccion"] .Io6YTe',
             (el) => el.textContent
           );
         } catch {

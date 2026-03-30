@@ -2,63 +2,100 @@
   <div class="card content shadow">
     <div class="card-header">
       <h4>
-        <b-icon-file-earmark-arrow-down></b-icon-file-earmark-arrow-down> Data
-        Scraper Bot
+        <i class="bi bi-file-earmark-arrow-down"></i> Data Scraper Bot
       </h4>
     </div>
     <div class="card-content p-3">
       <div class="row">
         <div class="col-12 mb-3">
           <label for="tags"
-            >Criterios de búsqueda (separalos con una coma o punto y
+            >Criterios de busqueda (separalos con Enter, coma o punto y
             coma)</label
           >
-          <b-form-tags
-            input-id="tags"
-            v-model="keyWordsArray"
-            separator=",;"
-            placeholder=""
-            tag-removed-label="elemento eliminado"
-            add-button-text="Agregar"
-            remove-on-delete
-          ></b-form-tags>
+          <div class="form-tags-wrapper border rounded p-2">
+            <div class="d-flex flex-wrap gap-1 mb-1">
+              <span
+                v-for="(tag, i) in keyWordsArray"
+                :key="i"
+                class="badge bg-secondary d-flex align-items-center"
+              >
+                {{ tag }}
+                <button
+                  type="button"
+                  class="btn-close btn-close-white ms-1"
+                  style="font-size: 0.5rem"
+                  @click="removeTag(i)"
+                ></button>
+              </span>
+            </div>
+            <input
+              class="form-control border-0 p-0"
+              style="box-shadow: none"
+              @keydown="handleTagInput"
+              v-model="tagInput"
+              placeholder="Escribe y presiona Enter"
+            />
+          </div>
         </div>
         <div class="col-12">
-          <label class="d-flex justify-content-between">
-            Objetivo
-          </label>
-          <b-form-checkbox
-            id="checkbox"
-            v-model="toAll"
-            v-on:change="setAll"
-            name="checkbox"
-            :value="true"
-            :unchecked-value="false"
-          >
-            Todo Chile
-          </b-form-checkbox>
+          <label class="d-flex justify-content-between"> Objetivo </label>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="toAllCheckbox"
+              v-model="toAll"
+              @change="setAll"
+            />
+            <label class="form-check-label" for="toAllCheckbox">
+              Todo Chile
+            </label>
+          </div>
 
           <div v-if="!toAll">
-            <b-form-group>
-              <b-form-radio-group
-                class="d-flex"
-                id="radio-group"
-                v-model="selectByRegion"
-                v-on:change="setRegionsOrCities"
-                :options="[
-                  { text: 'Regiones', value: true },
-                  { text: 'Ciudades', value: false },
-                ]"
-                name="radio-options"
-              ></b-form-radio-group>
-            </b-form-group>
+            <div class="d-flex mt-2 mb-2">
+              <div class="form-check me-3">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="radioRegiones"
+                  :value="true"
+                  v-model="selectByRegion"
+                  @change="setRegionsOrCities"
+                />
+                <label class="form-check-label" for="radioRegiones"
+                  >Regiones</label
+                >
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  id="radioCiudades"
+                  :value="false"
+                  v-model="selectByRegion"
+                  @change="setRegionsOrCities"
+                />
+                <label class="form-check-label" for="radioCiudades"
+                  >Ciudades</label
+                >
+              </div>
+            </div>
 
-            <b-form-select
+            <select
+              class="form-select"
               v-model="selected"
-              :options="items"
               multiple
-              :select-size="5"
-            ></b-form-select>
+              size="5"
+            >
+              <option
+                v-for="(item, i) in items"
+                :key="i"
+                :value="item.value"
+              >
+                {{ item.text }}
+              </option>
+            </select>
           </div>
         </div>
       </div>
@@ -80,9 +117,11 @@
 import regions from "../assets/regions.json";
 
 export default {
+  emits: ['getData'],
   data() {
     return {
       keyWordsArray: [],
+      tagInput: "",
       recipientsStr: "",
       selected: [],
       toAll: false,
@@ -107,7 +146,8 @@ export default {
             ),
           []
         )
-        .sort(),
+        .sort()
+        .map((c) => ({ text: c, value: [c] })),
       items: regions
         .sort((a, b) => a.id - b.id)
         .map((r) => ({
@@ -120,22 +160,40 @@ export default {
     };
   },
   computed: {
-    recipientsArr: function() {
-      return this.recipientsStr.split("\n").filter((s) => s != "");
-    },
-    host: function() {
-      return location.origin;
-    },
-    selectedLength: function() {
+    selectedLength() {
       return this.selected.reduce((acc, el) => acc.concat(el), []).length;
     },
   },
   methods: {
+    handleTagInput(e) {
+      if (["Enter", ",", ";"].includes(e.key)) {
+        e.preventDefault();
+        const val = this.tagInput.trim();
+        if (val && !this.keyWordsArray.includes(val)) {
+          this.keyWordsArray.push(val);
+        }
+        this.tagInput = "";
+      } else if (
+        e.key === "Backspace" &&
+        !this.tagInput &&
+        this.keyWordsArray.length
+      ) {
+        this.keyWordsArray.pop();
+      }
+    },
+    removeTag(index) {
+      this.keyWordsArray.splice(index, 1);
+    },
     setAll() {
-      this.selected = this.toAll ? this.cities : [];
+      if (this.toAll) {
+        this.selected = this.cities.map((c) => c.value);
+      } else {
+        this.selected = [];
+      }
     },
     setRegionsOrCities() {
       this.items = this.selectByRegion ? this.regions : this.cities;
+      this.selected = [];
     },
     getData() {
       let payload = {
@@ -160,24 +218,7 @@ export default {
 label {
   color: #616161;
 }
-.resume {
-  font-size: 24px;
-}
-
-.badge {
-  background-color: gray;
-  button {
-    border: none;
-    background-color: gray;
-  }
-}
-
-div[role="radiogroup"] {
-  .custom-control {
-    margin-right: 1rem;
-    input[type="radio"] {
-      margin-right: 0.2rem;
-    }
-  }
+.form-tags-wrapper {
+  background: #fff;
 }
 </style>
