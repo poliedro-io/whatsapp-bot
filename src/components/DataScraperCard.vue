@@ -1,110 +1,107 @@
 <template>
-  <div class="card content shadow">
-    <div class="card-header">
-      <h4>
-        <i class="bi bi-file-earmark-arrow-down"></i> Data Scraper Bot
-      </h4>
+  <div class="bg-white rounded-xl border border-border shadow-sm w-full max-w-2xl">
+    <!-- Header -->
+    <div class="px-5 py-4 border-b border-border flex items-center gap-2">
+      <FileDown class="size-5 text-primary" />
+      <h4 class="font-semibold text-sm text-foreground">Data Scraper Bot</h4>
     </div>
-    <div class="card-content p-3">
-      <div class="row">
-        <div class="col-12 mb-3">
-          <label for="tags"
-            >Criterios de busqueda (separalos con Enter, coma o punto y
-            coma)</label
-          >
-          <div class="form-tags-wrapper border rounded p-2">
-            <div class="d-flex flex-wrap gap-1 mb-1">
-              <span
-                v-for="(tag, i) in keyWordsArray"
-                :key="i"
-                class="badge bg-secondary d-flex align-items-center"
+
+    <!-- Body -->
+    <div class="p-5 flex flex-col gap-5">
+      <!-- Keywords -->
+      <div>
+        <label class="block text-sm font-medium text-muted-foreground mb-1.5">
+          Criterios de búsqueda
+          <span class="font-normal">(Enter, coma o punto y coma para separar)</span>
+        </label>
+        <div class="min-h-11 border border-input rounded-lg p-2 bg-white focus-within:ring-2 focus-within:ring-ring">
+          <div class="flex flex-wrap gap-1.5 mb-1.5" v-if="keyWordsArray.length">
+            <span
+              v-for="(tag, i) in keyWordsArray"
+              :key="i"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium"
+            >
+              {{ tag }}
+              <button
+                class="text-muted-foreground hover:text-foreground transition-colors leading-none"
+                @click="removeTag(i)"
               >
-                {{ tag }}
-                <button
-                  type="button"
-                  class="btn-close btn-close-white ms-1"
-                  style="font-size: 0.5rem"
-                  @click="removeTag(i)"
-                ></button>
-              </span>
-            </div>
-            <input
-              class="form-control border-0 p-0"
-              style="box-shadow: none"
-              @keydown="handleTagInput"
-              v-model="tagInput"
-              placeholder="Escribe y presiona Enter"
-            />
+                <X class="size-3" />
+              </button>
+            </span>
           </div>
+          <input
+            class="w-full text-sm outline-none bg-transparent placeholder:text-muted-foreground"
+            @keydown="handleTagInput"
+            v-model="tagInput"
+            placeholder="Escribe y presiona Enter"
+          />
         </div>
-        <div class="col-12">
-          <label class="d-flex justify-content-between"> Objetivo </label>
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="toAllCheckbox"
-              v-model="toAll"
-              @change="setAll"
-            />
-            <label class="form-check-label" for="toAllCheckbox">
-              Todo Chile
+      </div>
+
+      <!-- Objetivo -->
+      <div>
+        <label class="block text-sm font-medium text-muted-foreground mb-2">Objetivo</label>
+
+        <label class="flex items-center gap-2 cursor-pointer mb-3">
+          <input
+            type="checkbox"
+            class="size-4 rounded border-border accent-primary cursor-pointer"
+            v-model="toAll"
+            @change="setAll"
+          />
+          <span class="text-sm text-foreground">Todo Chile</span>
+        </label>
+
+        <div v-if="!toAll" class="flex flex-col gap-3">
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                class="accent-primary cursor-pointer"
+                :value="true"
+                v-model="selectByRegion"
+                @change="setRegionsOrCities"
+              />
+              <span class="text-sm text-foreground">Regiones</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                class="accent-primary cursor-pointer"
+                :value="false"
+                v-model="selectByRegion"
+                @change="setRegionsOrCities"
+              />
+              <span class="text-sm text-foreground">Ciudades</span>
             </label>
           </div>
 
-          <div v-if="!toAll">
-            <div class="d-flex mt-2 mb-2">
-              <div class="form-check me-3">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  id="radioRegiones"
-                  :value="true"
-                  v-model="selectByRegion"
-                  @change="setRegionsOrCities"
-                />
-                <label class="form-check-label" for="radioRegiones"
-                  >Regiones</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="radio"
-                  id="radioCiudades"
-                  :value="false"
-                  v-model="selectByRegion"
-                  @change="setRegionsOrCities"
-                />
-                <label class="form-check-label" for="radioCiudades"
-                  >Ciudades</label
-                >
-              </div>
-            </div>
-
-            <select
-              class="form-select"
-              v-model="selected"
-              multiple
-              size="5"
+          <select
+            class="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            v-model="selected"
+            multiple
+            size="5"
+          >
+            <option
+              v-for="(item, i) in items"
+              :key="i"
+              :value="item.value"
+              class="py-1"
             >
-              <option
-                v-for="(item, i) in items"
-                :key="i"
-                :value="item.value"
-              >
-                {{ item.text }}
-              </option>
-            </select>
-          </div>
+              {{ item.text }}
+            </option>
+          </select>
         </div>
       </div>
     </div>
-    <div class="card-footer d-flex justify-content-between">
-      <div>{{ selectedLength }} ciudades</div>
+
+    <!-- Footer -->
+    <div class="px-5 py-4 border-t border-border flex items-center justify-between">
+      <span class="text-sm text-muted-foreground">{{ selectedLength }} ciudades</span>
       <button
+        class="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
         :disabled="!selectedLength || !keyWordsArray.length"
-        class="btn btn-success"
         @click="getData"
       >
         Obtener datos
@@ -114,15 +111,16 @@
 </template>
 
 <script>
-import regions from "../assets/regions.json";
+import { X, FileDown } from 'lucide-vue-next'
+import regions from "../assets/regions.json"
 
 export default {
+  components: { X, FileDown },
   emits: ['getData'],
   data() {
     return {
       keyWordsArray: [],
       tagInput: "",
-      recipientsStr: "",
       selected: [],
       toAll: false,
       selectByRegion: true,
@@ -157,68 +155,46 @@ export default {
             []
           ),
         })),
-    };
+    }
   },
   computed: {
     selectedLength() {
-      return this.selected.reduce((acc, el) => acc.concat(el), []).length;
+      return this.selected.reduce((acc, el) => acc.concat(el), []).length
     },
   },
   methods: {
     handleTagInput(e) {
       if (["Enter", ",", ";"].includes(e.key)) {
-        e.preventDefault();
-        const val = this.tagInput.trim();
+        e.preventDefault()
+        const val = this.tagInput.trim()
         if (val && !this.keyWordsArray.includes(val)) {
-          this.keyWordsArray.push(val);
+          this.keyWordsArray.push(val)
         }
-        this.tagInput = "";
-      } else if (
-        e.key === "Backspace" &&
-        !this.tagInput &&
-        this.keyWordsArray.length
-      ) {
-        this.keyWordsArray.pop();
+        this.tagInput = ""
+      } else if (e.key === "Backspace" && !this.tagInput && this.keyWordsArray.length) {
+        this.keyWordsArray.pop()
       }
     },
     removeTag(index) {
-      this.keyWordsArray.splice(index, 1);
+      this.keyWordsArray.splice(index, 1)
     },
     setAll() {
       if (this.toAll) {
-        this.selected = this.cities.map((c) => c.value);
+        this.selected = this.cities.map((c) => c.value)
       } else {
-        this.selected = [];
+        this.selected = []
       }
     },
     setRegionsOrCities() {
-      this.items = this.selectByRegion ? this.regions : this.cities;
-      this.selected = [];
+      this.items = this.selectByRegion ? this.regions : this.cities
+      this.selected = []
     },
     getData() {
-      let payload = {
+      this.$emit("getData", {
         keyWords: this.keyWordsArray,
         cities: this.selected.reduce((acc, el) => acc.concat(el), []),
-      };
-      this.$emit("getData", payload);
+      })
     },
   },
-};
+}
 </script>
-
-<style lang="scss">
-.content {
-  width: 800px;
-  max-width: 95vw;
-}
-.clean {
-  cursor: pointer;
-  text-decoration: none;
-}
-label {
-  color: #616161;
-}
-.form-tags-wrapper {
-  background: #fff;
-}
-</style>

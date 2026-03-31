@@ -1,151 +1,126 @@
 <template>
-  <div
-    class="content-wrapper mx-auto py-auto d-flex flex-column align-items-stretch justify-content-between"
-  >
-    <div
-      v-if="!loggedIn"
-      style="height: 100%"
-      class="d-flex flex-column align-items-center"
-    >
-      <h5>Permiso de Whatsapp</h5>
+  <div class="flex flex-col items-center gap-5 py-2 w-full">
+    <!-- QR (no logueado) -->
+    <div v-if="!loggedIn" class="flex flex-col items-center gap-4">
+      <h5 class="text-sm font-semibold text-foreground">Permiso de WhatsApp</h5>
       <vue-qr
         v-if="token != null"
         :text="token"
         :margin="10"
-        :size="350"
-      ></vue-qr>
-
-      <div v-else class="my-auto">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
+        :size="280"
+        class="rounded-xl border border-border shadow-sm"
+      />
+      <div v-else class="flex flex-col items-center gap-3 py-8">
+        <div class="size-8 rounded-full border-2 border-border border-t-primary animate-spin" />
+        <p class="text-sm text-muted-foreground">Iniciando sesión...</p>
       </div>
     </div>
-    <Transition name="fade">
-      <div v-if="loggedIn">
-        <i
-          class="bi bi-envelope mb-3"
-          :class="{ 'animate-fade': task.status == 1 }"
-          style="font-size: 3rem"
-        ></i>
 
-        <h5>{{ completed ? "Mensaje enviado" : "Enviando mensaje" }}</h5>
-        <div class="d-flex justify-content-between">
-          <div class="progress mt-2" style="width: 85%">
+    <!-- Enviando (logueado) -->
+    <Transition
+      enter-active-class="transition-opacity duration-500"
+      enter-from-class="opacity-0"
+    >
+      <div v-if="loggedIn" class="w-full flex flex-col gap-4">
+        <div class="flex flex-col items-center gap-2">
+          <Mail
+            class="size-10 text-primary"
+            :class="{ 'animate-pulse': task.status === 1 }"
+          />
+          <h5 class="text-sm font-semibold text-foreground">
+            {{ completed ? "Mensajes enviados" : "Enviando mensajes" }}
+          </h5>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="flex items-center gap-3">
+          <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
             <div
-              class="progress-bar progress-bar-striped progress-bar-animated"
+              class="h-full rounded-full bg-primary transition-all duration-300"
               :style="{ width: value.toFixed(1) + '%' }"
-            ></div>
+            />
           </div>
-          <span style="width: 12%">
-            {{ value.toFixed(1) + "%" }}
+          <span class="text-xs text-muted-foreground w-12 text-right tabular-nums">
+            {{ value.toFixed(1) }}%
           </span>
         </div>
-        <div class="logs-box">
-          <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
+
+        <!-- Logs -->
+        <div class="h-44 overflow-y-auto rounded-lg bg-muted/60 border border-border px-3 py-2">
+          <div v-for="(log, i) in logs" :key="i" class="text-xs text-foreground/80 py-0.5">
+            {{ log }}
+          </div>
         </div>
       </div>
     </Transition>
 
-    <button
-      v-if="completed"
-      class="btn btn-outline-success btn-sm"
-      @click="clean"
-    >
-      Cerrar
-    </button>
-    <button
-      v-else
-      class="btn btn-link btn-sm text-decoration-none text-danger mt-2"
-      @click="cancel"
-    >
-      {{ loggedIn ? "Detener envio" : "Cancelar" }}
-    </button>
+    <!-- Actions -->
+    <div class="w-full flex justify-end">
+      <button
+        v-if="completed"
+        class="px-4 py-1.5 rounded-lg border border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors"
+        @click="clean"
+      >
+        Cerrar
+      </button>
+      <button
+        v-else
+        class="text-sm text-destructive hover:text-destructive/80 transition-colors"
+        @click="cancel"
+      >
+        {{ loggedIn ? "Detener envio" : "Cancelar" }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script>
-import VueQr from "vue-qr";
+import { Mail } from 'lucide-vue-next'
+import VueQr from "vue-qr"
 
 export default {
-  components: { VueQr },
+  components: { VueQr, Mail },
   props: ["task"],
   emits: ['clean'],
   data() {
     return {
       logs: [],
       token: null,
-    };
+    }
   },
   watch: {
     task(val) {
       if (val.message.includes("TOKEN")) {
-        this.token = val.message.split(" ")[1];
-        return;
+        this.token = val.message.split(" ")[1]
+        return
       }
-      this.logs.push(val.message);
+      this.logs.push(val.message)
       this.$nextTick(() => {
-        var element = this.$el.querySelector(".logs-box");
-        if (element) element.scrollTop = element.scrollHeight;
-      });
+        const el = this.$el.querySelector(".overflow-y-auto")
+        if (el) el.scrollTop = el.scrollHeight
+      })
     },
   },
   computed: {
     loggedIn() {
-      return this.task.status > 0;
+      return this.task.status > 0
     },
     completed() {
-      return this.task.status == 2;
+      return this.task.status === 2
     },
     value() {
-      return this.task.progress * 100;
+      return this.task.progress * 100
     },
   },
   methods: {
     cancel() {
-      if (confirm("¿Seguro que quieres interrumpir la operacion?")) {
-        this.clean();
+      if (confirm("¿Seguro que quieres interrumpir la operación?")) {
+        this.clean()
       }
     },
     clean() {
-      this.$emit("clean");
+      this.$emit("clean")
     },
   },
-};
+}
 </script>
-
-<style lang="scss">
-.content-wrapper {
-  width: 100%;
-  padding: 1.5rem 0;
-}
-.logs-box {
-  background-color: #f3f3f3;
-  height: 200px;
-  width: 95%;
-  overflow-y: auto;
-  margin-top: 0.8rem;
-  border-radius: 0.3rem;
-  padding: 0.4rem;
-  padding-bottom: 1.5rem;
-  color: #313131;
-  div {
-    font-size: 14px;
-  }
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.animate-fade {
-  animation: fadeAnimation 1.5s ease-in-out infinite;
-}
-@keyframes fadeAnimation {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
-}
-</style>

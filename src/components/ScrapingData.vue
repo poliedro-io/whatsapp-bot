@@ -1,128 +1,99 @@
 <template>
-  <div
-    class="content-wrapper mx-auto py-auto d-flex flex-column align-items-stretch justify-content-between"
-  >
-    <Transition name="fade">
-      <div>
-        <i
-          class="bi bi-file-earmark-arrow-down mb-3"
-          :class="{ 'animate-fade': task.status == 1 }"
-          style="font-size: 3rem"
-        ></i>
+  <div class="flex flex-col gap-5 w-full max-w-md py-4">
+    <div class="flex flex-col items-center gap-2">
+      <FileDown
+        class="size-10 text-primary"
+        :class="{ 'animate-pulse': task.status === 1 }"
+      />
+      <h5 class="text-sm font-semibold text-foreground">
+        {{ completed ? "Proceso completado" : "Obteniendo datos" }}
+      </h5>
+    </div>
 
-        <h5>{{ completed ? "Proceso completado" : "Obteniendo datos" }}</h5>
-        <div class="d-flex justify-content-between">
-          <div class="progress mt-2" style="width: 85%">
-            <div
-              class="progress-bar progress-bar-striped progress-bar-animated"
-              :style="{ width: value.toFixed(1) + '%' }"
-            ></div>
-          </div>
-          <span style="width: 12%">
-            {{ value.toFixed(1) + "%" }}
-          </span>
-        </div>
-        <div class="logs-box">
-          <div>{{ logs }}</div>
-        </div>
+    <!-- Progress bar -->
+    <div class="flex items-center gap-3">
+      <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+        <div
+          class="h-full rounded-full bg-primary transition-all duration-300"
+          :style="{ width: value.toFixed(1) + '%' }"
+        />
       </div>
-    </Transition>
+      <span class="text-xs text-muted-foreground w-12 text-right tabular-nums">
+        {{ value.toFixed(1) }}%
+      </span>
+    </div>
 
-    <div class="mt-3 d-flex justify-content-end">
-      <div v-if="completed">
-        <button class="btn btn-outline-success me-2" @click="clean">
+    <!-- Log -->
+    <div class="h-24 overflow-y-auto rounded-lg bg-muted/60 border border-border px-3 py-2">
+      <div class="text-xs text-foreground/80">{{ logs }}</div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2">
+      <template v-if="completed">
+        <button
+          class="px-4 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-muted transition-colors"
+          @click="clean"
+        >
           Cerrar
         </button>
-        <button @click="downloadFile" class="btn btn-success">
-          Descargar archivo
-        </button>
-      </div>
-      <div v-else>
         <button
-          class="btn btn-link btn-sm text-decoration-none text-danger"
-          @click="cancel"
+          class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          @click="downloadFile"
         >
-          Cancelar proceso
+          <Download class="size-4" /> Descargar archivo
         </button>
-      </div>
+      </template>
+      <button
+        v-else
+        class="text-sm text-destructive hover:text-destructive/80 transition-colors"
+        @click="cancel"
+      >
+        Cancelar proceso
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+import { FileDown, Download } from 'lucide-vue-next'
+
 export default {
+  components: { FileDown, Download },
   props: ["task"],
   emits: ['clean'],
   data() {
     return {
       logs: "",
-      token: null,
-    };
+    }
   },
   watch: {
     task(val) {
-      this.logs = val.message;
+      this.logs = val.message
     },
   },
   computed: {
     completed() {
-      return this.task.status == 2;
+      return this.task.status === 2
     },
     value() {
-      return this.task.progress * 100;
+      return this.task.progress * 100
     },
   },
   methods: {
     cancel() {
-      if (confirm("¿Seguro que quieres interrumpir la operacion?")) {
-        this.clean();
+      if (confirm("¿Seguro que quieres interrumpir la operación?")) {
+        this.clean()
       }
     },
     clean() {
-      this.$emit("clean");
+      this.$emit("clean")
     },
     downloadFile() {
-      const a = document.createElement("a");
-      a.href = "http://localhost:3000/scraped-data.xlsx";
-      a.click();
+      const a = document.createElement("a")
+      a.href = "http://localhost:3000/scraped-data.xlsx"
+      a.click()
     },
   },
-};
+}
 </script>
-
-<style lang="scss">
-.content-wrapper {
-  width: 50%;
-  height: 100%;
-  padding: 5rem 0px;
-}
-.logs-box {
-  background-color: #f3f3f3;
-  height: 100px;
-  width: 100%;
-  overflow-y: auto;
-  margin-top: 0.8rem;
-  border-radius: 0.3rem;
-  padding: 0.4rem;
-  padding-bottom: 1.5rem;
-  color: #313131;
-  div {
-    font-size: 14px;
-  }
-}
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.animate-fade {
-  animation: fadeAnimation 1.5s ease-in-out infinite;
-}
-@keyframes fadeAnimation {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
-}
-</style>

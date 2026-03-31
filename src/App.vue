@@ -1,93 +1,108 @@
 <template>
-  <div class="app-layout">
+  <div class="h-dvh flex flex-col overflow-hidden bg-background text-foreground">
     <!-- Navbar -->
-    <nav class="app-navbar">
-      <div class="d-flex align-items-center">
-        <button class="btn btn-link text-dark d-md-none me-2" @click="sidebarOpen = !sidebarOpen">
-          <i class="bi bi-list" style="font-size: 1.4rem"></i>
-        </button>
-        <i class="bi bi-whatsapp text-success me-2" style="font-size: 1.5rem"></i>
-        <span class="fw-semibold">WhatsApp Bot</span>
-      </div>
+    <nav class="h-14 shrink-0 bg-white border-b border-border px-4 flex items-center gap-2 z-20">
+      <button
+        class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+        @click="sidebarOpen = !sidebarOpen"
+      >
+        <MenuIcon class="size-5" />
+      </button>
+      <MessageCircle class="size-6 text-primary shrink-0" />
+      <span class="font-semibold text-sm">WhatsApp Bot</span>
     </nav>
 
-    <!-- Sidebar backdrop (mobile) -->
-    <div
-      v-if="sidebarOpen"
-      class="sidebar-backdrop d-md-none"
-      @click="sidebarOpen = false"
-    ></div>
+    <div class="flex flex-1 min-h-0">
+      <!-- Sidebar backdrop (mobile) -->
+      <Transition
+        enter-active-class="transition-opacity duration-200"
+        enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-200"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="sidebarOpen"
+          class="fixed inset-0 top-14 bg-black/40 z-30 md:hidden"
+          @click="sidebarOpen = false"
+        />
+      </Transition>
 
-    <!-- Sidebar -->
-    <aside class="app-sidebar" :class="{ open: sidebarOpen }">
-      <div class="sidebar-nav">
-        <a
-          v-for="item in menuItems"
-          :key="item.key"
-          class="sidebar-item"
-          :class="{ active: activeSection === item.key }"
-          @click="setSection(item.key)"
-        >
-          <i :class="'bi bi-' + item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
-      </div>
-    </aside>
-
-    <!-- Content -->
-    <main class="app-content">
-      <!-- Envios -->
-      <send-history
-        v-if="activeSection === 'envios'"
-        ref="sendHistory"
-        @newSend="showModal = true"
-        @cleanLogs="cleanLogs"
-      ></send-history>
-
-      <!-- Contactos -->
-      <div v-if="activeSection === 'contactos'" class="text-center py-5 text-muted">
-        <i class="bi bi-people" style="font-size: 3rem"></i>
-        <p class="mt-2">Gestion de contactos (proximamente)</p>
-      </div>
-
-      <!-- Scraper -->
-      <div v-if="activeSection === 'scraper'">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h5 class="mb-0 text-dark">Data Scraper</h5>
+      <!-- Sidebar -->
+      <aside
+        class="fixed top-14 left-0 h-[calc(100dvh-3.5rem)] w-60 bg-sidebar z-40 transition-transform duration-200 ease-in-out shrink-0 md:relative md:top-auto md:h-auto md:translate-x-0"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      >
+        <div class="flex flex-col gap-0.5 p-2 pt-3">
+          <button
+            v-for="item in menuItems"
+            :key="item.key"
+            class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm w-full text-left transition-colors cursor-pointer"
+            :class="activeSection === item.key
+              ? 'bg-primary/15 text-sidebar-accent'
+              : 'text-sidebar-foreground hover:bg-white/10 hover:text-white/80'"
+            @click="setSection(item.key)"
+          >
+            <component :is="item.icon" class="size-4 shrink-0" />
+            {{ item.label }}
+          </button>
         </div>
-        <div class="position-relative">
-          <data-scraper-card @getData="getData"></data-scraper-card>
-          <div v-if="bussy && activeMethod === 'data-scraper'" class="overlay-backdrop">
-            <scraping-data @clean="clean" :task="task"></scraping-data>
+      </aside>
+
+      <!-- Content -->
+      <main class="flex-1 overflow-y-auto bg-background p-4 md:p-6">
+        <!-- Envios -->
+        <send-history
+          v-if="activeSection === 'envios'"
+          ref="sendHistory"
+          @newSend="showModal = true"
+          @cleanLogs="cleanLogs"
+        />
+
+        <!-- Contactos -->
+        <contacts-view
+          v-else-if="activeSection === 'contactos'"
+          @toast="showToast($event.message, $event.type)"
+        />
+
+        <!-- Scraper -->
+        <div v-else-if="activeSection === 'scraper'">
+          <h2 class="text-base font-semibold text-foreground mb-4">Data Scraper</h2>
+          <div class="relative">
+            <data-scraper-card @getData="getData" />
+            <div
+              v-if="bussy && activeMethod === 'data-scraper'"
+              class="absolute inset-0 bg-white/92 rounded-xl flex items-start justify-center z-10 pt-8"
+            >
+              <scraping-data @clean="clean" :task="task" />
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
 
     <!-- Modal: Nuevo envio -->
     <Teleport to="body">
-      <div v-if="showModal" class="modal-backdrop-custom" @click.self="closeModal">
-        <div class="modal-dialog-custom">
-          <div class="modal-header-custom">
-            <h5 class="mb-0">
-              <i class="bi bi-send"></i> Nuevo envio
+      <div
+        v-if="showModal"
+        class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-[5vh] overflow-y-auto modal-backdrop"
+        @click.self="closeModal"
+      >
+        <div class="bg-white rounded-xl w-full max-w-3xl shadow-2xl modal-dialog">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h5 class="font-semibold flex items-center gap-2 text-sm">
+              <Send class="size-4 text-primary" /> Nuevo envio
             </h5>
             <button
-              class="btn-close"
+              class="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors disabled:opacity-40"
               @click="closeModal"
               :disabled="bussy"
-            ></button>
+            >
+              <X class="size-4" />
+            </button>
           </div>
-          <div class="modal-body-custom">
-            <div v-if="!bussy">
-              <whatsapp-card
-                @sendMessage="sendMessage"
-                @cleanLogs="cleanLogs"
-              ></whatsapp-card>
-            </div>
-            <div v-else>
-              <sending-message @clean="clean" :task="task"></sending-message>
-            </div>
+          <div class="p-5">
+            <whatsapp-card v-if="!bussy" @sendMessage="sendMessage" @cleanLogs="cleanLogs" />
+            <sending-message v-else @clean="clean" :task="task" />
           </div>
         </div>
       </div>
@@ -95,9 +110,19 @@
 
     <!-- Toast -->
     <Teleport to="body">
-      <Transition name="toast">
-        <div v-if="toast" class="app-toast" :class="'toast-' + toast.type">
-          <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-exclamation-circle'"></i>
+      <Transition
+        enter-active-class="transition-all duration-300"
+        enter-from-class="opacity-0 translate-y-3"
+        leave-active-class="transition-all duration-200"
+        leave-to-class="opacity-0 translate-y-3"
+      >
+        <div
+          v-if="toast"
+          class="fixed bottom-5 right-4 left-4 md:left-auto md:right-5 md:min-w-64 flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium shadow-lg z-[2000]"
+          :class="toast.type === 'success' ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'"
+        >
+          <CheckCircle2 v-if="toast.type === 'success'" class="size-4 shrink-0" />
+          <AlertCircle v-else class="size-4 shrink-0" />
           {{ toast.message }}
         </div>
       </Transition>
@@ -106,19 +131,18 @@
 </template>
 
 <script>
-import WhatsappCard from "./components/WhatsappCard.vue";
-import DataScraperCard from "./components/DataScraperCard.vue";
-import SendingMessage from "./components/SendingMessage.vue";
-import ScrapingData from "./components/ScrapingData.vue";
-import SendHistory from "./components/SendHistory.vue";
+import { MenuIcon, MessageCircle, Send, X, Users, FileDown, CheckCircle2, AlertCircle } from 'lucide-vue-next'
+import WhatsappCard from "./components/WhatsappCard.vue"
+import DataScraperCard from "./components/DataScraperCard.vue"
+import SendingMessage from "./components/SendingMessage.vue"
+import ScrapingData from "./components/ScrapingData.vue"
+import SendHistory from "./components/SendHistory.vue"
+import ContactsView from "./components/ContactsView.vue"
 
 export default {
   components: {
-    WhatsappCard,
-    DataScraperCard,
-    SendingMessage,
-    ScrapingData,
-    SendHistory,
+    WhatsappCard, DataScraperCard, SendingMessage, ScrapingData, SendHistory, ContactsView,
+    MenuIcon, MessageCircle, Send, X, Users, FileDown, CheckCircle2, AlertCircle,
   },
   data() {
     return {
@@ -130,307 +154,93 @@ export default {
       activeMethod: null,
       toast: null,
       menuItems: [
-        { key: "envios", label: "Envios", icon: "send" },
-        { key: "contactos", label: "Contactos", icon: "people" },
-        { key: "scraper", label: "Scraper", icon: "file-earmark-arrow-down" },
+        { key: "envios", label: "Envios", icon: Send },
+        { key: "contactos", label: "Contactos", icon: Users },
+        { key: "scraper", label: "Scraper", icon: FileDown },
       ],
-    };
+    }
   },
   computed: {
     bussy() {
-      return this.task != null;
+      return this.task != null
     },
     host() {
-      return "ws://localhost:3000";
+      return "ws://localhost:3000"
     },
   },
   methods: {
     setSection(key) {
-      this.activeSection = key;
-      this.sidebarOpen = false;
+      this.activeSection = key
+      this.sidebarOpen = false
     },
     closeModal() {
-      if (this.bussy) return;
-      this.showModal = false;
+      if (this.bussy) return
+      this.showModal = false
     },
     sendMessage(payload) {
-      this.activeMethod = "whatsapp-sender";
-      this.ws = new WebSocket(this.host);
-      this.ws.onmessage = (message) => this.handleMessage(message);
+      this.activeMethod = "whatsapp-sender"
+      this.ws = new WebSocket(this.host)
+      this.ws.onmessage = (message) => this.handleMessage(message)
       this.ws.onopen = () => {
-        this.ws.send(
-          JSON.stringify({ method: "whatsapp-sender", params: payload })
-        );
-      };
+        this.ws.send(JSON.stringify({ method: "whatsapp-sender", params: payload }))
+      }
       this.ws.onclose = () => {
-        this.task = null;
-        this.activeMethod = null;
-        // Refresh history after send completes
+        this.task = null
+        this.activeMethod = null
         if (this.$refs.sendHistory) {
-          this.$refs.sendHistory.loadLogs();
+          this.$refs.sendHistory.loadLogs()
         }
-      };
+      }
     },
     cleanLogs() {
-      this.ws = new WebSocket(this.host);
+      this.ws = new WebSocket(this.host)
       this.ws.onopen = () => {
-        this.ws.send(JSON.stringify({ cleanLogs: true }));
-        this.showToast("Registro limpiado", "success");
+        this.ws.send(JSON.stringify({ cleanLogs: true }))
+        this.showToast("Registro limpiado", "success")
         if (this.$refs.sendHistory) {
-          this.$refs.sendHistory.loadLogs();
+          this.$refs.sendHistory.loadLogs()
         }
-      };
+      }
     },
     showToast(message, type = "success") {
-      this.toast = { message, type };
-      setTimeout(() => { this.toast = null; }, 3000);
+      this.toast = { message, type }
+      setTimeout(() => { this.toast = null }, 3000)
     },
     getData(payload) {
-      this.activeMethod = "data-scraper";
-      this.ws = new WebSocket(this.host);
-      this.ws.onmessage = (message) => this.handleMessage(message);
+      this.activeMethod = "data-scraper"
+      this.ws = new WebSocket(this.host)
+      this.ws.onmessage = (message) => this.handleMessage(message)
       this.ws.onopen = () => {
-        this.ws.send(
-          JSON.stringify({ method: "data-scraper", params: payload })
-        );
-      };
+        this.ws.send(JSON.stringify({ method: "data-scraper", params: payload }))
+      }
       this.ws.onclose = () => {
-        this.task = null;
-        this.activeMethod = null;
-      };
+        this.task = null
+        this.activeMethod = null
+      }
     },
     handleMessage(message) {
-      this.task = { ...JSON.parse(message["data"]) };
+      this.task = { ...JSON.parse(message["data"]) }
     },
     clean() {
-      this.ws.send(JSON.stringify({ close: true }));
+      this.ws.send(JSON.stringify({ close: true }))
     },
   },
-};
+}
 </script>
 
-<style lang="scss">
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+<style>
+.modal-backdrop {
+  animation: backdropIn 0.15s ease-out;
 }
-
-.app-layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  grid-template-rows: 56px 1fr;
-  grid-template-areas:
-    "navbar navbar"
-    "sidebar content";
-  height: 100vh;
-  overflow: hidden;
+.modal-dialog {
+  animation: dialogIn 0.2s ease-out;
 }
-
-// Navbar
-.app-navbar {
-  grid-area: navbar;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 0 1.5rem;
-  display: flex;
-  align-items: center;
-  z-index: 100;
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
-// Sidebar
-.app-sidebar {
-  grid-area: sidebar;
-  background: #1a1a2e;
-  overflow-y: auto;
-  padding-top: 0.5rem;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0.5rem;
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  color: #a0a0b8;
-  text-decoration: none;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e0e0f0;
-  }
-
-  &.active {
-    background: rgba(37, 211, 102, 0.15);
-    color: #25d366;
-  }
-
-  i {
-    font-size: 1.1rem;
-    width: 20px;
-    text-align: center;
-  }
-}
-
-// Content
-.app-content {
-  grid-area: content;
-  background: #f5f6fa;
-  padding: 1.5rem 2rem;
-  overflow-y: auto;
-}
-
-// Modal
-.modal-backdrop-custom {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 5vh;
-  overflow-y: auto;
-}
-
-.modal-dialog-custom {
-  background: #fff;
-  border-radius: 12px;
-  width: 900px;
-  max-width: 95vw;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-  animation: modalIn 0.2s ease-out;
-}
-
-@keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-header-custom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #eee;
-
-  h5 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-}
-
-.modal-body-custom {
-  padding: 1.5rem;
-}
-
-// Overlay for scraper
-.overlay-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 0.25rem;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 10;
-}
-
-// Responsive
-@media (max-width: 767px) {
-  .app-layout {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "navbar"
-      "content";
-  }
-
-  .app-sidebar {
-    position: fixed;
-    top: 56px;
-    left: -260px;
-    width: 260px;
-    height: calc(100vh - 56px);
-    z-index: 200;
-    transition: left 0.25s ease;
-
-    &.open {
-      left: 0;
-    }
-  }
-
-  .sidebar-backdrop {
-    position: fixed;
-    inset: 0;
-    top: 56px;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 150;
-  }
-
-  .app-content {
-    padding: 1rem;
-  }
-}
-
-// Toast
-.app-toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-
-  &.toast-success {
-    background: #25d366;
-    color: #fff;
-  }
-  &.toast-error {
-    background: #dc3545;
-    color: #fff;
-  }
-}
-
-.toast-enter-active {
-  animation: toastIn 0.3s ease-out;
-}
-.toast-leave-active {
-  animation: toastIn 0.3s ease-in reverse;
-}
-@keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>
