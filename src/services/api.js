@@ -82,6 +82,21 @@ export function createService(table, defaults = {}) {
     },
 
     /**
+     * Inserta o actualiza un registro si ya existe (por onConflict).
+     * @param {object} payload
+     * @param {string} onConflict - columna para detectar conflicto
+     */
+    async upsert(payload, { onConflict } = {}) {
+      const { data, error } = await supabase
+        .from(table)
+        .upsert(payload, { onConflict })
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    },
+
+    /**
      * Inserta filas en lotes, ignorando duplicados (upsert).
      * @param {Array}  rows
      * @param {object} opts - { onConflict: 'col', batchSize: 100 }

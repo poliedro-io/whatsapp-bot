@@ -57,6 +57,7 @@
             <tr class="border-b border-border bg-muted/50">
               <th class="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Nombre</th>
               <th class="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Teléfono</th>
+              <th class="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Ciudad</th>
               <th class="text-left px-4 py-3 text-xs font-medium text-muted-foreground hidden md:table-cell">Notas</th>
               <th class="px-4 py-3 w-20"></th>
             </tr>
@@ -76,6 +77,9 @@
                   <Phone class="size-3.5 text-muted-foreground shrink-0" />
                   {{ contact.phone }}
                 </div>
+              </td>
+              <td class="px-4 py-3 text-muted-foreground hidden md:table-cell text-xs">
+                {{ contact.city || '—' }}
               </td>
               <td class="px-4 py-3 text-muted-foreground hidden md:table-cell text-xs">
                 {{ contact.notes || '—' }}
@@ -218,12 +222,22 @@
             <!-- Column mapping -->
             <div v-if="importColumns.length" class="flex flex-col gap-3">
               <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide">Mapeo de columnas</p>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-3 gap-3">
                 <div>
                   <label class="block text-xs text-muted-foreground mb-1">Columna → Nombre</label>
                   <select
                     class="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     v-model="colName"
+                  >
+                    <option value="">— Ninguna —</option>
+                    <option v-for="col in importColumns" :key="col" :value="col">{{ col }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs text-muted-foreground mb-1">Columna → Ciudad <span class="text-destructive">*</span></label>
+                  <select
+                    class="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    v-model="colCity"
                   >
                     <option value="">— Ninguna —</option>
                     <option v-for="col in importColumns" :key="col" :value="col">{{ col }}</option>
@@ -253,7 +267,8 @@
                     class="px-3 py-2 text-xs flex items-center gap-3"
                   >
                     <span class="text-foreground font-medium w-28 truncate">{{ colName ? row[colName] : '—' }}</span>
-                    <span class="text-muted-foreground">{{ colPhone ? row[colPhone] : '—' }}</span>
+                    <span class="text-muted-foreground w-24 truncate">{{ colCity ? row[colCity] : '—' }}</span>
+                    <span class="text-muted-foreground font-mono">{{ colPhone ? formatChilePhone(String(row[colPhone] ?? '')) : '—' }}</span>
                   </div>
                 </div>
               </div>
@@ -315,6 +330,7 @@ export default {
       importPreview: [],
       importColumns: [],
       colName: '',
+      colCity: '',
       colPhone: '',
       importError: '',
       importing: false,
@@ -371,8 +387,11 @@ export default {
 
     async saveContact() {
       this.formError = ''
-      const phone = this.form.phone.trim()
-      if (!phone) { this.formError = 'El teléfono es obligatorio.'; return }
+      const rawPhone = this.form.phone.trim()
+      if (!rawPhone) { this.formError = 'El teléfono es obligatorio.'; return }
+
+      const phone = this.formatChilePhone(rawPhone)
+      if (!phone) { this.formError = 'Teléfono inválido. Debe ser un celular chileno (9 dígitos).'; this.saving = false; return }
 
       this.saving = true
       const payload = { name: this.form.name.trim(), phone, notes: this.form.notes.trim() }
@@ -382,15 +401,13 @@ export default {
           await contactsService.update(this.editing.id, payload)
           this.$emit('toast', { message: 'Contacto actualizado', type: 'success' })
         } else {
-          await contactsService.create(payload)
-          this.$emit('toast', { message: 'Contacto creado', type: 'success' })
+          await contactsService.upsert(payload, { onConflict: 'phone' })
+          this.$emit('toast', { message: 'Contacto guardado', type: 'success' })
         }
         this.closeForm()
         this.loadContacts()
       } catch (err) {
-        this.formError = err.code === '23505'
-          ? 'Ya existe un contacto con ese teléfono.'
-          : err.message
+        this.formError = err.message
       }
 
       this.saving = false
@@ -415,6 +432,7 @@ export default {
       this.importPreview = []
       this.importColumns = []
       this.colName = ''
+      this.colCity = ''
       this.colPhone = ''
       this.importError = ''
     },
@@ -441,16 +459,42 @@ export default {
         this.importColumns = Object.keys(rows[0])
 
         // Auto-detectar columnas comunes
-        const phoneKeys = ['telefono', 'teléfono', 'phone', 'celular', 'movil', 'móvil', 'numero', 'número']
+        const phoneKeys = ['telefono', 'teléfono', 'phone', 'celular', 'movil', 'móvil', 'numero', 'número', 'telefonos', 'teléfonos']
         const nameKeys = ['nombre', 'name', 'contacto', 'cliente']
+        const cityKeys = ['comuna', 'ciudad', 'city', 'localidad', 'region', 'región']
 
         const foundPhone = this.importColumns.find((c) => phoneKeys.includes(c.toLowerCase()))
         const foundName = this.importColumns.find((c) => nameKeys.includes(c.toLowerCase()))
+        const foundCity = this.importColumns.find((c) => cityKeys.includes(c.toLowerCase()))
 
         if (foundPhone) this.colPhone = foundPhone
         if (foundName) this.colName = foundName
+        if (foundCity) this.colCity = foundCity
       }
       reader.readAsArrayBuffer(file)
+    },
+
+    /**
+     * Formatea un teléfono chileno para WhatsApp: +569XXXXXXXX
+     * Acepta formatos: 9XXXXXXXX, 569XXXXXXXX, +569XXXXXXXX, 09XXXXXXXX
+     * Si viene separado por - o , toma el primer número.
+     */
+    formatChilePhone(raw) {
+      // Tomar el primer número si hay varios separados por - o ,
+      const first = raw.split(/[-,]/)[0].trim()
+      // Quitar espacios y caracteres no numéricos excepto +
+      let num = first.replace(/[^\d+]/g, '')
+      // Quitar + inicial para trabajar solo con dígitos
+      num = num.replace(/^\+/, '')
+      // Si empieza con 56, quitar el prefijo país
+      if (num.startsWith('56')) num = num.slice(2)
+      // Si empieza con 0, quitarlo (ej: 09...)
+      if (num.startsWith('0')) num = num.slice(1)
+      // Debe quedar un número de 9 dígitos empezando con 9
+      if (num.length === 9 && num.startsWith('9')) {
+        return `+56${num}`
+      }
+      return '' // número no válido
     },
 
     async runImport() {
@@ -459,15 +503,19 @@ export default {
       this.importError = ''
 
       const rows = this.importPreview
-        .map((row) => ({
-          name: this.colName ? String(row[this.colName] ?? '').trim() : '',
-          phone: String(row[this.colPhone] ?? '').trim(),
-          notes: '',
-        }))
+        .map((row) => {
+          const phone = this.formatChilePhone(String(row[this.colPhone] ?? ''))
+          return {
+            name: this.colName ? String(row[this.colName] ?? '').trim() : '',
+            city: this.colCity ? String(row[this.colCity] ?? '').trim() : '',
+            phone,
+            notes: '',
+          }
+        })
         .filter((r) => r.phone)
 
       if (!rows.length) {
-        this.importError = 'No se encontraron teléfonos válidos.'
+        this.importError = 'No se encontraron teléfonos válidos con formato chileno.'
         this.importing = false
         return
       }

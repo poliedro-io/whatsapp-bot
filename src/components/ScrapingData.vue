@@ -91,7 +91,7 @@ export default {
     },
     downloadFile() {
       const a = document.createElement("a")
-      a.href = "http://localhost:3000/scraped-data.xlsx"
+      a.href = "http://localhost:3001/scraped-data.xlsx"
       a.click()
     },
   },

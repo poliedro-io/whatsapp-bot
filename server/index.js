@@ -4,7 +4,7 @@ import fs from "fs";
 import { pathToFileURL } from "url";
 import path from "path";
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Ensure data directory exists
 if (!fs.existsSync("data")) fs.mkdirSync("data");
@@ -47,6 +47,30 @@ app.get("/logs", (_req, res) => {
     res.json(data);
   } catch {
     res.json({});
+  }
+});
+
+// Session status
+app.get("/session-status", (_req, res) => {
+  // Check if chrome session directory exists and has content
+  const hasSession = fs.existsSync("data/chrome-session/Default");
+  // Read saved phone if available
+  let phone = null;
+  try {
+    const data = JSON.parse(fs.readFileSync("data/session.json", "utf-8"));
+    phone = data.phone;
+  } catch {}
+  res.json({ linked: hasSession, phone: hasSession ? (phone || "Número no identificado") : null });
+});
+
+// Unlink session (delete chrome session to force new QR)
+app.delete("/session-unlink", (_req, res) => {
+  try {
+    fs.rmSync("data/chrome-session", { recursive: true, force: true });
+    fs.writeFileSync("data/session.json", JSON.stringify({ linked: false, phone: null }), "utf-8");
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ ok: false });
   }
 });
 const server = app.listen(PORT, () =>

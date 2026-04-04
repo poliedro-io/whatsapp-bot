@@ -54,8 +54,8 @@
         <send-history
           v-if="activeSection === 'envios'"
           ref="sendHistory"
-          @newSend="showModal = true"
-          @cleanLogs="cleanLogs"
+          @newSend="openNewSend"
+          @repeatSend="openRepeatSend"
         />
 
         <!-- Contactos -->
@@ -85,10 +85,9 @@
       <div
         v-if="showModal"
         class="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-[5vh] overflow-y-auto modal-backdrop"
-        @click.self="closeModal"
       >
-        <div class="bg-white rounded-xl w-full max-w-3xl shadow-2xl modal-dialog">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] shadow-2xl modal-dialog flex flex-col">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
             <h5 class="font-semibold flex items-center gap-2 text-sm">
               <Send class="size-4 text-primary" /> Nuevo envio
             </h5>
@@ -100,9 +99,28 @@
               <X class="size-4" />
             </button>
           </div>
-          <div class="p-5">
-            <whatsapp-card v-if="!bussy" @sendMessage="sendMessage" @cleanLogs="cleanLogs" />
+          <div class="px-5 py-5 overflow-y-auto flex-1 min-h-0">
+            <whatsapp-card v-if="!bussy" ref="whatsappCard" :prefill="prefillData" @sendMessage="sendMessage" @saveDraft="saveDraft" @update:stats="onCardStats" />
             <sending-message v-else @clean="clean" :task="task" />
+          </div>
+          <div v-if="!bussy" class="flex items-center justify-between px-5 py-4 border-t border-border shrink-0">
+            <span class="text-sm text-muted-foreground">{{ modalRecipients }} destinatarios</span>
+            <div class="flex items-center gap-2">
+              <button
+                class="px-4 py-1.5 rounded-lg border border-border text-sm text-foreground hover:bg-muted transition-colors disabled:opacity-40"
+                :disabled="!modalHasMessage"
+                @click="triggerSaveDraft"
+              >
+                Guardar borrador
+              </button>
+              <button
+                class="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+                :disabled="!modalRecipients || !modalHasMessage"
+                @click="triggerSend"
+              >
+                Enviar mensaje
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -138,6 +156,7 @@ import SendingMessage from "./components/SendingMessage.vue"
 import ScrapingData from "./components/ScrapingData.vue"
 import SendHistory from "./components/SendHistory.vue"
 import ContactsView from "./components/ContactsView.vue"
+import { sendsService } from "./services/sends"
 
 export default {
   components: {
@@ -149,9 +168,13 @@ export default {
       activeSection: "envios",
       sidebarOpen: false,
       showModal: false,
+      prefillData: null,
+      modalRecipients: 0,
+      modalHasMessage: false,
       task: null,
       ws: null,
       activeMethod: null,
+      currentSendId: null,
       toast: null,
       menuItems: [
         { key: "envios", label: "Envios", icon: Send },
@@ -165,7 +188,7 @@ export default {
       return this.task != null
     },
     host() {
-      return "ws://localhost:3000"
+      return "ws://localhost:3001"
     },
   },
   methods: {
@@ -176,8 +199,67 @@ export default {
     closeModal() {
       if (this.bussy) return
       this.showModal = false
+      this.prefillData = null
     },
-    sendMessage(payload) {
+    onCardStats({ recipients, hasMessage }) {
+      this.modalRecipients = recipients
+      this.modalHasMessage = hasMessage
+    },
+    triggerSaveDraft() {
+      this.$refs.whatsappCard?.saveDraft()
+    },
+    triggerSend() {
+      this.$refs.whatsappCard?.sendMessage()
+    },
+    async saveDraft(payload) {
+      try {
+        await sendsService.create({
+          message: payload.message,
+          image_url: payload.imagePath || null,
+          recipients: payload.recipients,
+          status: 'draft',
+          total: payload.recipients.length,
+          sent_count: 0,
+        })
+        this.showToast("Borrador guardado", "success")
+        this.closeModal()
+        if (this.$refs.sendHistory) this.$refs.sendHistory.loadSends()
+      } catch (err) {
+        this.showToast("Error al guardar: " + err.message, "error")
+      }
+    },
+    openNewSend() {
+      this.prefillData = null
+      this.showModal = true
+    },
+    openRepeatSend(send) {
+      this.prefillData = {
+        message: send.message,
+        recipients: send.recipients || [],
+      }
+      this.showModal = true
+    },
+    async sendMessage(payload) {
+      // 1. Crear draft en Supabase
+      try {
+        const send = await sendsService.create({
+          message: payload.message,
+          image_url: payload.imagePath || null,
+          recipients: payload.recipients,
+          status: 'draft',
+          total: payload.recipients.length,
+          sent_count: 0,
+        })
+        this.currentSendId = send.id
+        this._sendTotal = payload.recipients.length
+        this._lastSendStatus = null
+        this._lastSentCount = null
+      } catch (err) {
+        this.showToast("Error al guardar el envío: " + err.message, "error")
+        return
+      }
+
+      // 2. Iniciar WebSocket
       this.activeMethod = "whatsapp-sender"
       this.ws = new WebSocket(this.host)
       this.ws.onmessage = (message) => this.handleMessage(message)
@@ -187,8 +269,9 @@ export default {
       this.ws.onclose = () => {
         this.task = null
         this.activeMethod = null
-        if (this.$refs.sendHistory) {
-          this.$refs.sendHistory.loadLogs()
+        this.currentSendId = null
+        if (this.$refs.sendHistory && typeof this.$refs.sendHistory.loadSends === 'function') {
+          this.$refs.sendHistory.loadSends()
         }
       }
     },
@@ -218,8 +301,36 @@ export default {
         this.activeMethod = null
       }
     },
-    handleMessage(message) {
-      this.task = { ...JSON.parse(message["data"]) }
+    async handleMessage(message) {
+      const data = JSON.parse(message["data"])
+      this.task = { ...data }
+
+      if (!this.currentSendId) return
+
+      // status 1 = RUNNING → in_progress
+      if (data.status === 1 && this._lastSendStatus !== 'in_progress') {
+        this._lastSendStatus = 'in_progress'
+        await sendsService.update(this.currentSendId, { status: 'in_progress' }).catch(() => {})
+      }
+
+      // Actualizar sent_count basado en progreso
+      if (data.status === 1 && data.progress > 0) {
+        const sentCount = Math.round(data.progress * (this._sendTotal || 0))
+        if (sentCount !== this._lastSentCount) {
+          this._lastSentCount = sentCount
+          await sendsService.update(this.currentSendId, { sent_count: sentCount }).catch(() => {})
+        }
+      }
+
+      // status 2 = COMPLETED → fulfilled
+      if (data.status === 2) {
+        this._lastSendStatus = null
+        this._lastSentCount = null
+        await sendsService.update(this.currentSendId, {
+          status: 'fulfilled',
+          sent_count: this._sendTotal || 0,
+        }).catch(() => {})
+      }
     },
     clean() {
       this.ws.send(JSON.stringify({ close: true }))

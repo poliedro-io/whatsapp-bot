@@ -7,7 +7,7 @@ const USER_DATA_DIR = path.resolve("data/chrome-session");
 
 let browser;
 
-export async function run({ message, recipients: _recipients, attachImage, imagePath }, task) {
+export async function run({ message, recipients: _recipients, attachImage, imagePath, skipAlreadySent }, task) {
   if (!message || !_recipients || !_recipients.length) return "";
 
   task.log("Comenzando.");
@@ -38,11 +38,11 @@ export async function run({ message, recipients: _recipients, attachImage, image
   });
 
   try {
-    const recipients = removeRepeatedNumbers(_recipients);
+    const recipients = skipAlreadySent ? removeRepeatedNumbers(_recipients) : uniq(_recipients);
     const skipped = _recipients.length - recipients.length;
 
     if (!recipients.length) {
-      task.log("No hay destinatarios nuevos. Usa 'Limpiar registro' para reenviar.");
+      task.log("No hay destinatarios nuevos.");
       await browser.close();
       task.setStatus(task.states.RUNNING);
       return "Completado!";
@@ -87,6 +87,23 @@ export async function run({ message, recipients: _recipients, attachImage, image
     }
 
     await page.waitForSelector("#side", { timeout: 120000 });
+
+    // Extraer número vinculado desde localStorage de WhatsApp Web
+    try {
+      const phoneNumber = await page.evaluate(() => {
+        // last-wid-md contiene el ID del usuario en formato "56XXXXXXXXX:XX@c.us"
+        const wid = localStorage.getItem("last-wid-md");
+        if (wid) {
+          const num = wid.split(":")[0].replace(/\D/g, "");
+          return num ? `+${num}` : null;
+        }
+        return null;
+      });
+      const sessionPhone = phoneNumber || "Número no identificado";
+      fs.writeFileSync("data/session.json", JSON.stringify({ linked: true, phone: sessionPhone }), "utf-8");
+    } catch {
+      fs.writeFileSync("data/session.json", JSON.stringify({ linked: true, phone: "Número no identificado" }), "utf-8");
+    }
 
     task.setStatus(task.states.RUNNING);
     if (skipped > 0) {
@@ -151,10 +168,9 @@ export async function run({ message, recipients: _recipients, attachImage, image
           // 2. Then send the text message
           await typeAndSend(page, message);
         } else {
-          // Message is pre-filled via URL, just click send
-          const sendButton = 'button[aria-label="Enviar"]';
-          await page.waitForSelector(sendButton, { timeout: 5000 });
-          await page.click(sendButton);
+          // Message is pre-filled via URL, just press Enter to send
+          await page.waitForSelector('div[contenteditable="true"][data-tab="10"]', { timeout: 15000 });
+          await page.keyboard.press("Enter");
         }
 
         await new Promise((r) => setTimeout(r, 1500));
@@ -223,9 +239,7 @@ async function typeAndSend(page, message) {
 
   await new Promise((r) => setTimeout(r, 300));
 
-  const sendButton = 'button[aria-label="Enviar"]';
-  await page.waitForSelector(sendButton, { timeout: 3000 });
-  await page.click(sendButton);
+  await page.keyboard.press("Enter");
 }
 
 function removeRepeatedNumbers(numbers) {
