@@ -7,7 +7,7 @@ const USER_DATA_DIR = path.resolve("data/chrome-session");
 
 let browser;
 
-export async function run({ message, recipients: _recipients, attachImage, imagePath, skipAlreadySent }, task) {
+export async function run({ message, recipients: _recipients, attachImage, imagePath, skipAlreadySent, humanTiming = true }, task) {
   if (!message || !_recipients || !_recipients.length) return "";
 
   task.log("Comenzando.");
@@ -111,6 +111,10 @@ export async function run({ message, recipients: _recipients, attachImage, image
     }
     task.log(`Comenzando envio a ${recipients.length} destinatario(s)...`);
 
+    // Offsets aleatorios para que cada corrida tenga su propio ritmo
+    const mediumBreakEvery = randInt(15, 25);
+    const longBreakEvery = randInt(60, 100);
+
     for (let [index, number] of recipients.entries()) {
       if (task.socket.readyState != 1) throw Error("Abortado");
 
@@ -158,33 +162,53 @@ export async function run({ message, recipients: _recipients, attachImage, image
           const fileInput = await page.$('input[type="file"][accept="image/*"]');
           if (!fileInput) throw new Error("No se encontro el input de imagen");
           await fileInput.uploadFile(imagePath || "data/imagen.png");
-          await new Promise((r) => setTimeout(r, 2000));
+          await sleep(randInt(1800, 3200));
 
           const previewSend = 'div[aria-label="Enviar"][role="button"]';
           await page.waitForSelector(previewSend, { timeout: 5000 });
           await page.click(previewSend);
-          await new Promise((r) => setTimeout(r, 2000));
+          await sleep(randInt(1800, 3200));
 
           // 2. Then send the text message
           await typeAndSend(page, message);
         } else {
-          // Message is pre-filled via URL, just press Enter to send
+          // Message is pre-filled via URL, simulate reading before sending
           await page.waitForSelector('div[contenteditable="true"][data-tab="10"]', { timeout: 15000 });
+          if (humanTiming) await sleep(randInt(600, 1800));
           await page.keyboard.press("Enter");
         }
-
-        await new Promise((r) => setTimeout(r, 1500));
 
         task.setProgress((index + 1) / recipients.length);
         task.log(
           `[${index + 1}/${recipients.length}] Mensaje enviado a ${number}`
         );
         updateData(number);
+
+        // Pausa humana antes del siguiente
+        if (index < recipients.length - 1) {
+          if (humanTiming) {
+            const sent = index + 1;
+            let wait;
+            if (sent % longBreakEvery === 0) {
+              wait = randInt(180000, 420000); // 3-7 min
+              task.log(`Pausa larga: ${Math.round(wait / 1000)}s (descanso)...`);
+            } else if (sent % mediumBreakEvery === 0) {
+              wait = randInt(60000, 180000); // 1-3 min
+              task.log(`Pausa media: ${Math.round(wait / 1000)}s...`);
+            } else {
+              wait = randInt(8000, 25000); // 8-25s base
+            }
+            await sleep(wait);
+          } else {
+            await sleep(1500);
+          }
+        }
       } catch (err) {
         task.setProgress((index + 1) / recipients.length);
         task.log(
           `[${index + 1}/${recipients.length}] Error con ${number}: ${err.message || err}`
         );
+        if (humanTiming) await sleep(randInt(5000, 12000));
         continue;
       }
     }
@@ -240,6 +264,14 @@ async function typeAndSend(page, message) {
   await new Promise((r) => setTimeout(r, 300));
 
   await page.keyboard.press("Enter");
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 function removeRepeatedNumbers(numbers) {

@@ -74,6 +74,10 @@
           <input type="checkbox" v-model="skipAlreadySent" class="rounded border-input" />
           Omitir contactos ya enviados
         </label>
+        <label class="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input type="checkbox" v-model="humanTiming" class="rounded border-input" />
+          Tiempos variables (anti-detección)
+        </label>
       </div>
 
       <!-- Upload imagen (solo si checkbox activo) -->
@@ -130,11 +134,15 @@ export default {
       loadingContacts: false,
       skipAlreadySent: false,
       attachImageEnabled: false,
+      humanTiming: true,
     }
   },
   computed: {
     recipientsArr() {
-      return this.recipientsStr.split("\n").filter((s) => s !== "")
+      return this.recipientsStr
+        .split(/[\s,;]+/)
+        .map((s) => s.trim())
+        .filter((s) => s !== "")
     },
   },
   watch: {
@@ -229,6 +237,7 @@ export default {
         attachImage: !!imagePath,
         imagePath,
         skipAlreadySent: this.skipAlreadySent,
+        humanTiming: this.humanTiming,
       })
     },
     cleanLogs() {
